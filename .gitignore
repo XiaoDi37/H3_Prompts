@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+studio-test-artifacts/chrome-profile/
+studio-test-artifacts/chrome-relay-profile/

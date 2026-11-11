@@ -1,0 +1,7 @@
+PASS Local service hosts the page and enables the same-origin relay
+PASS Direct CORS call fails in the browser while the relay test connection succeeds
+PASS Relay hint follows the interface language
+PASS Streaming rewrite runs end to end through the relay
+PASS Key images generate through the relay and save as an asset group
+PASS Mobile settings dialog fits and shows the relay guidance
+ALL PASSED 6

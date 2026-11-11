@@ -1,0 +1,13 @@
+{
+  "passed": 6,
+  "tests": [
+    "Local service hosts the page and enables the same-origin relay",
+    "Direct CORS call fails in the browser while the relay test connection succeeds",
+    "Relay hint follows the interface language",
+    "Streaming rewrite runs end to end through the relay",
+    "Key images generate through the relay and save as an asset group",
+    "Mobile settings dialog fits and shows the relay guidance"
+  ],
+  "consoleErrors": [],
+  "upstreamRequests": 6
+}

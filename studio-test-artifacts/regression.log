@@ -1,0 +1,46 @@
+PASS 550 records, local thumbnails, bilingual titles and clean filters
+PASS Real search input, literal special characters and no-result reset
+PASS Duration and approximate aspect intersection matches actual catalog
+PASS Create collection and reject a duplicate
+PASS Use template, auto-save edit/notes, organize favorite and safe custom tags
+PASS Save and restore versions without modifying original reference
+PASS Copy exports only edited prompt, never private notes
+PASS Preview defers video networking until user plays
+PASS Language and theme switching preserve edits and selected filters
+PASS Full backup export, validation, conflict-safe and idempotent merge
+PASS Actual JSON file import confirms before merging and rejects invalid input
+PASS A slower file selection cannot replace a newer invalid file or a closed dialog
+PASS Reload retains favorites, notes and versions
+PASS Folder views, tag filtering, rename and non-destructive folder deletion
+PASS Draft navigation and empty draft copy protection
+PASS Hero actions preview the featured case and start from its template
+PASS Quota failure retains edits and failed version saves stay open without a false success
+PASS Import quota failure leaves state and confirmation intact for retry
+PASS Stale revisions are rejected before a delayed storage event, including imports
+PASS Queued writes use the browser lock and unsaved edits guard navigation
+PASS Agent launcher opens with welcome; settings validate and persist locally
+PASS Shot inserts from card, preview and editor reach the agent context
+PASS Streaming rewrite improves the inserted shot and applies to the workspace
+PASS Key-image flow derives specs via LLM and renders downloadable images
+PASS Generated images save as an asset group with the source prompt
+PASS Improved prompt block saves as a prompt-only group
+PASS Asset shelf lists groups with collages, search and sort
+PASS Asset detail renames, edits, copies, downloads and applies
+PASS Asset feeds the agent context and deletes cleanly
+PASS Mobile asset shelf and detail dialog fit without overflow
+PASS API errors surface clearly and a running request can be stopped
+PASS Missing config guides to settings; connection test and image fallback work
+PASS Connection failures are classified as CORS block or unreachable address
+PASS Mobile agent panel fits and stays usable
+PASS Agent settings and assets survive reload; backup merges asset conflicts
+PASS Empty shelf guides back to the agent
+PASS Prompt lab scores six dimensions and fixes/enhances live
+PASS Chinese search expands to English terms and notes the expansion
+PASS Card copy, recent history and undo keep the flow fast
+PASS Command palette runs commands and shots with keyboard
+PASS Preview shows related shots and navigates between them
+PASS Intent chips and missing-dimension fix reach the agent
+PASS Light theme keeps the new surfaces readable
+PASS Responsive mobile and narrow desktop layouts never overflow
+PASS File-mode standalone works without fetch or dependencies
+ALL PASSED 45
