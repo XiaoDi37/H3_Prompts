@@ -1,0 +1,78 @@
+FRAME · 放映室 — Third-Party Notices
+====================================
+
+This product bundles prompt examples, thumbnail previews and director-skill
+material derived from the third-party repositories listed below. All other
+code (builder, relay service, workbench UI, tests) is original to this project.
+
+Prompt catalog sources
+----------------------
+
+The catalog keeps per-row `author` and `source_link` fields in prompts.json so
+every imported example remains attributable to its origin.
+
+1. BeatAPI MiniMax H3 prompt gallery (original 550 examples)
+   https://beatapi.io/minimax-h3-prompts
+   Public community example gallery; no repository license. Examples are
+   credited per row to their listed authors and source pages.
+
+2. xianyu110/awesome-minimax-h3-prompts (70 examples, slug prefix "xm-")
+   https://github.com/xianyu110/awesome-minimax-h3-prompts
+   MIT License — Copyright (c) 2026 API Models (tryminimax.asia)
+
+3. flaqai/awesome-minimax-h3-video-prompts (84 examples, slug prefix "fq-")
+   https://github.com/flaqai/awesome-minimax-h3-video-prompts
+   MIT License — Copyright (c) 2026 Flaq AI
+
+4. kinovi-ai/awesome-seedance-2-5-prompts (24 examples, slug prefix "sd-")
+   https://github.com/kinovi-ai/awesome-seedance-2-5-prompts
+   MIT License — Copyright (c) 2026 kinovi.ai
+
+5. liu-kaining/Awesome-Veo3-Prompts (30 examples, slug prefix "veo-")
+   https://github.com/liu-kaining/Awesome-Veo3-Prompts
+   MIT License — Copyright (c) 2025 liu-kaining
+
+Thumbnail images in thumbs/ are local copies or placeholders derived from the
+preview media published by the sources above, under the same terms.
+
+Director skills
+---------------
+
+The built-in director skills (SKILLS in studio.js) are condensed, reworded
+adaptations of the skill documents below — not verbatim copies. Each skill
+entry carries its source attribution in the agent panel.
+
+1. penposs/minimax-h3-video-prompt — "H3 导演方法 / H3 Director Method"
+   https://github.com/penposs/minimax-h3-video-prompt
+   MIT License — Copyright (c) 2026 penposs
+
+2. xxjrq/seedance-minimax-prompts — "H3 语法与硬限制 / H3 Grammar & Limits"
+   and "Seedance 2.5 导演方法 / Seedance 2.5 Director"
+   https://github.com/xxjrq/seedance-minimax-prompts
+   Code and schemas: MIT License — Copyright (c) 2026 xxjrq
+   Documentation and prompt examples: Creative Commons Attribution 4.0
+   International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/
+   The skill texts are adaptations of that CC BY 4.0 content: credit is given
+   here and in the UI, a link to the source is provided, and changes were made
+   (condensed and reworded for this product). No endorsement is implied.
+
+MIT License text (applies to the MIT-licensed sources above)
+------------------------------------------------------------
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

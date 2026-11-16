@@ -5,21 +5,24 @@ const assert = require('node:assert/strict');
 const ROOT = __dirname;
 const ARTIFACTS = path.join(ROOT, 'studio-test-artifacts');
 const URL = 'http://127.0.0.1:8786/video-prompt-studio.html';
-let socket, seq=0;
+let socket, seq=0, targetId=null, loadFired=false;
 const pending = new Map();
 const browserErrors=[];
 const results=[];
 async function connect(){
-  const pages=await (await fetch('http://127.0.0.1:9335/json/list')).json();
-  const page=pages.find(p=>p.type==='page');
-  socket=new WebSocket(page.webSocketDebuggerUrl);
+  const target=await (await fetch('http://127.0.0.1:9335/json/new?about:blank',{method:'PUT'})).json();
+  targetId=target.id;
+  socket=new WebSocket(target.webSocketDebuggerUrl);
   await new Promise((resolve,reject)=>{socket.addEventListener('open',resolve,{once:true});socket.addEventListener('error',reject,{once:true});});
   socket.addEventListener('message',event=>{
     const message=JSON.parse(event.data);
     if(message.id){const p=pending.get(message.id);pending.delete(message.id);if(message.error)p?.reject(new Error(JSON.stringify(message.error)));else p?.resolve(message.result);}
     if(message.method==='Runtime.exceptionThrown')browserErrors.push(message.params.exceptionDetails);
+    if(message.method==='Page.javascriptDialogOpening')send('Page.handleJavaScriptDialog',{accept:true});
+    if(message.method==='Page.loadEventFired')loadFired=true;
   });
   await send('Page.enable');await send('Runtime.enable');
+  await send('Page.handleJavaScriptDialog',{accept:true}).catch(()=>{});
 }
 function send(method,params={}){const id=++seq;return new Promise((resolve,reject)=>{pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});}
 async function evaluate(expression){const response=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true,userGesture:true});if(response.exceptionDetails)throw new Error(response.exceptionDetails.exception?.description||response.exceptionDetails.text);return response.result.value;}
@@ -35,6 +38,7 @@ async function select(selector,value){await evaluate(`(()=>{const el=document.qu
 async function screenshot(name){await evaluate("document.querySelector('#toast').hidden=true;document.querySelector('#contentScroll').scrollTop=0;document.querySelector('#editorContent').scrollTop=0;document.querySelector('.asset-dialog-scroll').scrollTop=0;Promise.all(document.getAnimations().filter(a=>a.effect&&a.effect.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})))");const data=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await fs.writeFile(path.join(ARTIFACTS,name+'.png'),Buffer.from(data.data,'base64'));}
 async function upload(file){await evaluate("document.querySelector('#backupFile').value=''");const doc=await send('DOM.getDocument');const node=await send('DOM.querySelector',{nodeId:doc.root.nodeId,selector:'#backupFile'});await send('DOM.setFileInputFiles',{nodeId:node.nodeId,files:[path.join(ARTIFACTS,file)]});}
 async function dimensions(width,height=960){await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});await evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');}
+async function reload(){loadFired=false;await send('Page.reload',{ignoreCache:true});const start=Date.now();while(!loadFired&&Date.now()-start<20000)await new Promise(r=>setTimeout(r,50));if(!loadFired)throw new Error('Reload did not fire load event');}
 async function test(name,action){await action();results.push(name);console.log('PASS',name);}
 async function run(){
   await connect();await dimensions(1440);await send('Page.navigate',{url:URL});await waitUntil("location.href.startsWith('http://127.0.0.1:8786')&&document.querySelectorAll('.prompt-card').length===24");
@@ -42,22 +46,38 @@ async function run(){
   await waitUntil("[...document.querySelectorAll('.card-media img')].slice(0,2).every(i=>i.complete&&i.naturalWidth>0)");
   await waitUntil("document.querySelector('#featuredImage').complete&&document.querySelector('#featuredImage').naturalWidth>0");
   const FIRST_ID=await evaluate('CATALOG[0].id');
-  await test('550 records, local thumbnails, bilingual titles and clean filters',async()=>{
+  await test('758 records, local thumbnails, bilingual titles and clean filters',async()=>{
     const data=await evaluate(`({total:CATALOG.length,cards:document.querySelectorAll('.prompt-card').length,categories:categories.length,firstId:document.querySelector('.prompt-card').dataset.itemId,secondId:document.querySelectorAll('.prompt-card')[1].dataset.itemId,featuredHidden:document.querySelector('#featuredScene').hidden,hero:document.querySelector('#featuredTitle').textContent,featuredName:document.querySelector('#featuredName').textContent,durations:[...document.querySelector('#durationFilter').options].slice(1).map(o=>Number(o.value)),aspect:CATALOG.find(d=>d.aspect==='7:4')?.aspect,group:CATALOG.find(d=>d.aspect==='7:4')?.aspect_group,theme:document.documentElement.dataset.theme})`);
-    assert.equal(data.total,550);assert.equal(data.cards,24);assert.equal(data.categories,17);assert.equal(data.firstId,'minimax-h3-keeps-delivering-beautiful-vfx-sequences-725200-010115029');assert.equal(data.secondId,'15-second-cinematic-showdown-between-the-most-technolog-354071-010104001');assert.equal(data.featuredHidden,false);assert.match(data.hero,/下一帧/);assert.ok(data.featuredName.length>0);assert.equal(data.theme,'dark');assert.deepEqual(data.durations,[...data.durations].sort((a,b)=>a-b));assert.equal(data.aspect,'7:4');assert.equal(data.group,'16:9');
+    assert.equal(data.total,758);assert.equal(data.cards,24);assert.equal(data.categories,26);assert.equal(data.firstId,'minimax-h3-keeps-delivering-beautiful-vfx-sequences-725200-010115029');assert.equal(data.secondId,'15-second-cinematic-showdown-between-the-most-technolog-354071-010104001');assert.equal(data.featuredHidden,false);assert.match(data.hero,/下一帧/);assert.ok(data.featuredName.length>0);assert.equal(data.theme,'dark');assert.deepEqual(data.durations,[...data.durations].sort((a,b)=>a-b));assert.equal(data.aspect,'7:4');assert.equal(data.group,'16:9');
   });
   await screenshot('desktop-library');
   await test('Real search input, literal special characters and no-result reset',async()=>{
-    await fill('#searchInput','香水');await waitUntil("document.querySelector('#resultCount').textContent.startsWith('7 ')");
+    await fill('#searchInput','香水');await waitUntil("document.querySelector('#resultCount').textContent.startsWith('9 ')");
     assert.match(await evaluate("document.querySelector('#resultNote').textContent"),/智能扩展/);
     assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),true);
     for(const query of ['[','.*','<script>','不存在的关键词-12345']){await fill('#searchInput',query);await evaluate('new Promise(r=>setTimeout(r,180))');}
-    assert.equal(await evaluate("document.querySelector('#emptyState').hidden"),false);await click('#resetFilters');assert.equal(await evaluate("document.querySelector('#resultCount').textContent"),'550 条灵感');assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),false);
+    assert.equal(await evaluate("document.querySelector('#emptyState').hidden"),false);await click('#resetFilters');assert.equal(await evaluate("document.querySelector('#resultCount').textContent"),'758 条灵感');assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),false);
   });
   await test('Duration and approximate aspect intersection matches actual catalog',async()=>{
     await select('#durationFilter','15');await select('#aspectFilter','9:16');
     const counts=await evaluate("({actual:filteredItems().length,expected:CATALOG.filter(d=>d.duration_seconds===15&&d.aspect_group==='9:16').length})");assert.equal(counts.actual,counts.expected);assert.ok(counts.actual>0);await click('#resetFilters');
     await click('#loadMore');assert.equal(await evaluate("document.querySelectorAll('.prompt-card').length"),48);
+  });
+  await test('Model filter isolates each generation model and resets cleanly',async()=>{
+    assert.equal(await evaluate("document.querySelector('#modelFilter').options.length"),4);
+    await select('#modelFilter','Veo 3');
+    assert.equal(await evaluate("filteredItems().length"),30);
+    assert.equal(await evaluate("filteredItems().every(d=>d.model==='Veo 3')"),true);
+    assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),true);
+    await select('#modelFilter','Seedance 2.5');
+    assert.equal(await evaluate("filteredItems().length"),24);
+    assert.equal(await evaluate("filteredItems().every(d=>d.model==='Seedance 2.5')"),true);
+    await select('#modelFilter','MiniMax H3');
+    assert.equal(await evaluate("filteredItems().length"),704);
+    await click('#resetFilters');
+    assert.equal(await evaluate("filteredItems().length"),758);
+    assert.equal(await evaluate("document.querySelector('#modelFilter').value"),'');
+    assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),false);
   });
   await test('Create collection and reject a duplicate',async()=>{
     await click('#newFolder');await fill('#formInput','产品片 · 灵感');await click('#formSubmit');
@@ -219,6 +239,54 @@ async function run(){
     assert.equal(await evaluate("document.body.classList.contains('agent-visible')"),false);
     assert.equal(await evaluate("document.body.classList.contains('editor-visible')"),true);
     await click('#editorClose');await click('#agentLauncher');
+  });
+  await test('Director skill picker injects method into the system prompt and persists',async()=>{
+    assert.equal(await evaluate("document.querySelector('#skillSelect').options.length"),4);
+    assert.equal(await evaluate("document.querySelector('#skillApply').hidden"),true);
+    await select('#skillSelect','h3-grammar');
+    assert.equal(await evaluate("state.settings.skill"),'h3-grammar');
+    assert.equal(await evaluate("document.querySelector('#skillApply').hidden"),false);
+    assert.equal(await evaluate("document.querySelector('#skillSource').href"),'https://github.com/xxjrq/seedance-minimax-prompts');
+    assert.equal(await evaluate("sysPrompt('improve').includes('ref2va')"),true);
+    assert.equal(await evaluate("sysPrompt('improve').includes('xxjrq/seedance-minimax-prompts')"),true);
+    await select('#skillSelect','seedance-director');
+    assert.equal(await evaluate("sysPrompt('improve').includes('30 s per generation')"),true);
+    await select('#skillSelect','');
+    assert.equal(await evaluate("state.settings.skill"),'');
+    assert.equal(await evaluate("document.querySelector('#skillApply').hidden"),true);
+    assert.equal(await evaluate("document.querySelector('#skillSource').hidden"),true);
+    assert.equal(await evaluate("sysPrompt('improve').includes('ref2va')"),false);
+    await select('#skillSelect','h3-director');
+    await reload();await waitUntil("document.querySelectorAll('.prompt-card').length===24");
+    assert.equal(await evaluate("state.settings.skill"),'h3-director');
+    await select('#skillSelect','');
+  });
+  await test('NEW badges, palette skill commands and skill-tagged asset groups',async()=>{
+    assert.equal(await evaluate("CATALOG.filter(d=>['xm-','fq-','sd-','veo-'].some(p=>d.id.startsWith(p))).length"),208);
+    await select('#modelFilter','Veo 3');
+    assert.equal(await evaluate("document.querySelectorAll('.prompt-card .new-badge').length"),24);
+    await click('#resetFilters');
+    assert.equal(await evaluate("document.querySelectorAll('.prompt-card .new-badge').length"),0);
+    await evaluate('openPalette()');await fill('#paletteInput','技能');
+    assert.equal(await evaluate('paletteItems.length'),4);
+    await evaluate("runPalette(paletteItems.findIndex(it=>it.label.includes('H3 导演方法')))");
+    assert.equal(await evaluate("state.settings.skill"),'h3-director');
+    assert.equal(await evaluate("document.body.classList.contains('agent-visible')"),true);
+    await evaluate('openPalette()');await fill('#paletteInput','技能');
+    await evaluate("runPalette(paletteItems.findIndex(it=>it.label.includes('无技能')))");
+    assert.equal(await evaluate("state.settings.skill"),'');
+    await select('#skillSelect','h3-grammar');
+    await evaluate("createAssetGroup({name:'技能归组验证',prompt:'grammar check',images:[]})");
+    await evaluate("closeAgent();setView('assets')");
+    assert.match(await evaluate("document.querySelector('.asset-card .card-tags .tag').textContent"),/H3 语法与硬限制/);
+    await click('.asset-card [data-asset-open]');
+    assert.match(await evaluate("document.querySelector('#assetMeta').textContent"),/H3 语法与硬限制/);
+    await click('#assetDialog [data-close]');
+    await fill('#searchInput','语法');
+    await waitUntil("document.querySelectorAll('.asset-card').length===1");
+    await fill('#searchInput','');
+    await waitUntil("document.querySelectorAll('.asset-card').length>=1");
+    await evaluate("state.assets=state.assets.filter(a=>a.name!=='技能归组验证');state.settings.skill='';saveState();renderNav();renderSkillPicker();setView('library');");
   });
   await test('Shot inserts from card, preview and editor reach the agent context',async()=>{
     await click('#mainNav [data-view="library"]');
@@ -605,11 +673,11 @@ async function run(){
     await click('#editorClose');await click('#menuToggle');await click('#mainNav [data-view="library"]');
   });
   await test('File-mode standalone works without fetch or dependencies',async()=>{
-    await dimensions(1440,960);await send('Page.navigate',{url:'file:///'+ROOT.replaceAll('\\','/')+'/video-prompt-studio.html'});await waitUntil("location.protocol==='file:'&&document.querySelectorAll('.prompt-card').length===24");await waitUntil("document.querySelector('.card-media img').naturalWidth>0");assert.equal(await evaluate('CATALOG.length'),550);
+    await dimensions(1440,960);await send('Page.navigate',{url:'file:///'+ROOT.replaceAll('\\','/')+'/video-prompt-studio.html'});await waitUntil("location.protocol==='file:'&&document.querySelectorAll('.prompt-card').length===24");await waitUntil("document.querySelector('.card-media img').naturalWidth>0");assert.equal(await evaluate('CATALOG.length'),758);
   });
   assert.equal(browserErrors.length,0,JSON.stringify(browserErrors));
   await fs.writeFile(path.join(ARTIFACTS,'results.json'),JSON.stringify({passed:results.length,tests:results,consoleErrors:browserErrors},null,2));
-  console.log('ALL PASSED',results.length);socket.close();
+  console.log('ALL PASSED',results.length);socket.close();if(targetId)fetch('http://127.0.0.1:9335/json/close/'+targetId).catch(()=>{});
 }
-run().catch(async error=>{console.error(error);if(socket){try{await screenshot('failure');console.error(await evaluate("({dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id),formError:document.querySelector('#formError').textContent,folders:state.folders,focused:document.activeElement?.outerHTML.slice(0,300)})"));}catch{}socket.close();}process.exitCode=1;});
+run().catch(async error=>{console.error(error);if(socket){try{await screenshot('failure');console.error(await evaluate("({dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id),formError:document.querySelector('#formError').textContent,folders:state.folders,focused:document.activeElement?.outerHTML.slice(0,300)})"));}catch{}socket.close();}if(targetId)fetch('http://127.0.0.1:9335/json/close/'+targetId).catch(()=>{});process.exitCode=1;});
 

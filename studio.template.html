@@ -47,7 +47,7 @@
       </section>
       <section class="search-section" aria-label="搜索与筛选">
         <div class="search-wrap"><span data-icon="search"></span><input id="searchInput" type="search" autocomplete="off" data-placeholder="searchPlaceholder" data-label="search"><kbd>/</kbd></div>
-        <div class="filter-row" id="filterRow"><select id="durationFilter" data-label="duration"></select><select id="aspectFilter" data-label="aspect"></select><select id="tagFilter" data-label="tags"></select><button class="text-button" id="resetFilters" data-t="reset">重置</button><select id="sortFilter" class="sort-select" data-label="sort"></select></div>
+        <div class="filter-row" id="filterRow"><select id="modelFilter" data-label="model"></select><select id="durationFilter" data-label="duration"></select><select id="aspectFilter" data-label="aspect"></select><select id="tagFilter" data-label="tags"></select><button class="text-button" id="resetFilters" data-t="reset">重置</button><select id="sortFilter" class="sort-select" data-label="sort"></select></div>
       </section>
       <div class="category-tabs" id="categoryTabs" aria-label="分类"></div>
       <div class="results-toolbar"><span id="resultCount" aria-live="polite"></span><span class="result-note" id="resultNote"></span></div>
@@ -80,6 +80,7 @@
     <div class="agent-thread" id="agentThread" role="log" aria-live="polite"></div>
     <div class="agent-context" id="agentContext" hidden></div>
     <div class="agent-composer">
+      <div class="agent-skill"><span class="agent-skill-label" data-t="skillLabel">导演技能</span><select id="skillSelect" data-label="skillLabel"></select><button class="agent-chip" id="skillApply" hidden><span data-icon="spark"></span><span data-t="skillApply">用技能改写</span></button><a class="agent-skill-source" id="skillSource" hidden target="_blank" rel="noopener" data-title="skillSource"></a></div>
       <div class="agent-intents" id="agentIntents"></div>
       <div class="agent-quick"><button class="agent-chip" id="agentImprove"><span data-icon="spark"></span><span data-t="agentImprove">优化提示词</span></button><button class="agent-chip" id="agentImages"><span data-icon="image"></span><span data-t="agentImages">生成关键图</span></button><button class="agent-chip ghost" id="agentClear"><span data-icon="trash"></span><span data-t="agentClear">清空对话</span></button></div>
       <div class="agent-input-row"><textarea id="agentInput" rows="2" maxlength="4000" data-placeholder="agentPlaceholder" data-label="agentSend"></textarea><button class="button primary agent-send" id="agentSend" data-title="agentSend" data-icon="send"></button></div>

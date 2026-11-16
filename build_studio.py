@@ -8,7 +8,7 @@ from fractions import Fraction
 
 
 BASE_DIR = Path(__file__).resolve().parent
-EXPECTED_RECORDS = 550
+EXPECTED_RECORDS = 758
 OUTPUT_NAME = "video-prompt-studio.html"
 ASPECT_GROUPS = [
     "2.39:1", "2.35:1", "21:9", "1.85:1", "16:9", "3:2", "4:3",

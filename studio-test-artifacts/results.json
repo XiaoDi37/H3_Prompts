@@ -1,9 +1,10 @@
 {
-  "passed": 45,
+  "passed": 48,
   "tests": [
-    "550 records, local thumbnails, bilingual titles and clean filters",
+    "758 records, local thumbnails, bilingual titles and clean filters",
     "Real search input, literal special characters and no-result reset",
     "Duration and approximate aspect intersection matches actual catalog",
+    "Model filter isolates each generation model and resets cleanly",
     "Create collection and reject a duplicate",
     "Use template, auto-save edit/notes, organize favorite and safe custom tags",
     "Save and restore versions without modifying original reference",
@@ -22,6 +23,8 @@
     "Stale revisions are rejected before a delayed storage event, including imports",
     "Queued writes use the browser lock and unsaved edits guard navigation",
     "Agent launcher opens with welcome; settings validate and persist locally",
+    "Director skill picker injects method into the system prompt and persists",
+    "NEW badges, palette skill commands and skill-tagged asset groups",
     "Shot inserts from card, preview and editor reach the agent context",
     "Streaming rewrite improves the inserted shot and applies to the workspace",
     "Key-image flow derives specs via LLM and renders downloadable images",

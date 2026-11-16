@@ -1,6 +1,6 @@
 # FRAME · 放映室
 
-个人视频生成提示词工作台：内置 550 条 MiniMax H3 分镜提示词与本地缩略图，集提示词实验室、智能体助手、素材库于一体。原生 HTML/CSS/JS + Python 标准库实现，零运行时依赖，单文件即可完全离线使用。
+个人视频生成提示词工作台：内置 758 条分镜提示词（MiniMax H3 / Seedance 2.5 / Veo 3）与本地缩略图，集提示词实验室、智能体助手、导演技能库、素材库于一体。原生 HTML/CSS/JS + Python 标准库实现，零运行时依赖，单文件即可完全离线使用。
 
 ![FRAME 分镜库](studio-test-artifacts/desktop-library.png)
 
@@ -10,13 +10,14 @@
 
 ## 功能
 
-- **分镜库**：550 条视频提示词，缩略图全部本地化；支持关键词搜索、时长 / 画幅 / 分类筛选、相似分镜推荐
+- **分镜库**：758 条视频提示词，缩略图全部本地化；支持关键词搜索、模型 / 时长 / 画幅 / 分类筛选、相似分镜推荐；外部导入条目带 NEW 徽标
 - **收藏与标签**：按收藏夹分组、自定义标签，支持 JSON 备份导出 / 导入
 - **中英双语界面**，深色 / 浅色主题一键切换
 - **提示词实验室**：草稿编辑、版本历史、创作笔记；提示词解剖、智能补全、一键增强
 - **智能体助手**：接入你自己的 LLM 与文生图 API，基于所选分镜优化提示词、生成关键帧图片
-- **素材库**：生成的图片与提示词按组保存，随时插入草稿复用
-- **效率工具**：命令面板、最近使用、卡片一键复制、撤销
+- **导演技能库**：内置 3 套署名开源导演技能（H3 导演方法、H3 语法与硬限制、Seedance 2.5 导演方法），注入系统提示词约束改写与关键图拆解，可一键「用技能改写」
+- **素材库**：生成的图片与提示词按组保存，启用技能时自动打上技能标签归组，随时插入草稿复用
+- **效率工具**：命令面板（含技能切换）、最近使用、卡片一键复制、撤销
 - **完全离线**：数据与缩略图全部内嵌进单个 HTML 文件，断网可用
 
 ## 快速开始
@@ -49,6 +50,7 @@ python start_studio.py --no-browser     # 不自动打开浏览器
 1. 用方式二启动服务，打开页面右下角的「智能体助手」→「智能体设置」
 2. 填写你的网关地址（OpenAI 兼容接口，如 `https://你的网关/v1`）、API Key、模型名；文生图接口同理
 3. 点「测试连接」确认可用，然后从任意分镜卡片插入智能体，即可优化提示词或生成关键帧图片
+4. 在智能体面板的「导演技能」下拉中选择技能（或命令面板搜「技能」），改写与关键图拆解会遵循该技能的方法与硬限制；来源链接可直接查看上游仓库
 
 **安全说明**
 
@@ -81,7 +83,7 @@ node --check studio.js     # 语法检查（可选）
 # 单元测试（28 项）：构建产物完整性 + 本机服务行为
 python -B -m unittest test_studio_build test_studio_server -q
 
-# 浏览器端到端（45 项）：需先启动静态服务与无头 Chrome
+# 浏览器端到端（48 项）：需先启动静态服务与无头 Chrome
 python -m http.server 8786 --bind 127.0.0.1
 # 另开终端：Chrome --headless=new --remote-debugging-port=9335 --user-data-dir=studio-test-artifacts/chrome-profile about:blank
 node test_studio_browser.cjs
@@ -94,7 +96,7 @@ node test_studio_relay_browser.cjs
 
 ## 离线分发包
 
-`FRAME-studio-offline.zip`（约 50MB）包含单文件页面、启动脚本与全部 550 张缩略图，解压即用，适合拷到无网环境。
+`FRAME-studio-offline.zip`（约 50MB）包含单文件页面、启动脚本与全部 758 张缩略图，解压即用，适合拷到无网环境。
 
 ## 目录结构
 
@@ -105,10 +107,12 @@ node test_studio_relay_browser.cjs
 ├── studio.template.html              # FRAME 页面模板
 ├── studio.css / studio.js            # FRAME 样式与逻辑源码
 ├── build_studio.py                   # 单文件构建器
-├── prompts.json                      # 550 条提示词数据
+├── prompts.json                      # 758 条提示词数据
 ├── titles_zh.json / thumbs_ext.json  # 中文标题 / 缩略图扩展名映射
-├── thumbs/                           # 550 张本地缩略图
+├── thumbs/                           # 758 张本地缩略图
 ├── scrape.py / download_thumbs.py / fix_meta.py  # 数据抓取与处理脚本
+├── import_sources.py                 # 外部开源仓库提示词导入管线（去重 + 缩略图）
+├── NOTICE                            # 第三方来源与许可证声明
 ├── build_page.py                     # 经典版页面构建器
 ├── test_studio_build.py / test_studio_server.py  # 单元测试
 ├── test_studio_browser.cjs           # 浏览器端到端测试
@@ -119,7 +123,23 @@ node test_studio_relay_browser.cjs
 
 ## 数据来源
 
-提示词与缩略图抓取自 [beatapi.io/minimax-h3-prompts](https://beatapi.io/minimax-h3-prompts)（共 550 条），版权归原作者所有，本仓库仅供个人学习与备份使用。
+提示词与缩略图来自以下公开来源，版权归原作者所有，本仓库仅供个人学习与备份使用；逐条署名保留在 `prompts.json` 的 `author` / `source_link` 字段，完整许可证声明见 [NOTICE](NOTICE)。
+
+| 来源 | 条目 | 许可证 |
+| --- | --- | --- |
+| [beatapi.io/minimax-h3-prompts](https://beatapi.io/minimax-h3-prompts) | 550 | 公开社区案例，逐条署名 |
+| [xianyu110/awesome-minimax-h3-prompts](https://github.com/xianyu110/awesome-minimax-h3-prompts) | 70 | MIT |
+| [flaqai/awesome-minimax-h3-video-prompts](https://github.com/flaqai/awesome-minimax-h3-video-prompts) | 84 | MIT |
+| [kinovi-ai/awesome-seedance-2-5-prompts](https://github.com/kinovi-ai/awesome-seedance-2-5-prompts) | 24 | MIT |
+| [liu-kaining/Awesome-Veo3-Prompts](https://github.com/liu-kaining/Awesome-Veo3-Prompts) | 30 | MIT |
+
+导演技能改编自 [penposs/minimax-h3-video-prompt](https://github.com/penposs/minimax-h3-video-prompt)（MIT）与 [xxjrq/seedance-minimax-prompts](https://github.com/xxjrq/seedance-minimax-prompts)（代码 MIT、内容 CC BY 4.0），为浓缩改写而非原文复制，技能面板内附来源链接。
+
+重新导入或增量合并外部仓库（先按上表地址浅克隆到 `external-sources/`，该目录已 gitignore）：
+
+```bash
+python import_sources.py   # 读取 external-sources/，按 URL 与正文去重后合并进 prompts.json
+```
 
 ## 技术栈
 

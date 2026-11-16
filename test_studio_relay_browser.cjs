@@ -26,8 +26,10 @@ async function connect() {
     const message = JSON.parse(event.data);
     if (message.id) { const p = pending.get(message.id); pending.delete(message.id); if (message.error) p?.reject(new Error(JSON.stringify(message.error))); else p?.resolve(message.result); }
     if (message.method === 'Runtime.exceptionThrown') browserErrors.push(message.params.exceptionDetails);
+    if (message.method === 'Page.javascriptDialogOpening') send('Page.handleJavaScriptDialog', { accept: true });
   });
   await send('Page.enable'); await send('Runtime.enable');
+  await send('Page.handleJavaScriptDialog', { accept: true }).catch(() => {});
 }
 async function evaluate(expression) { const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, userGesture: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; }
 async function waitUntil(expression) { const start = Date.now(); while (Date.now() - start < 20000) { try { if (await evaluate(expression)) return true; } catch {} await new Promise(r => setTimeout(r, 80)); } throw new Error('Condition timed out: ' + expression); }
@@ -93,7 +95,7 @@ async function run() {
 
   await test('Local service hosts the page and enables the same-origin relay', async () => {
     assert.equal(await evaluate('RELAY'), '/relay');
-    assert.equal(await evaluate('CATALOG.length'), 550);
+    assert.equal(await evaluate('CATALOG.length'), 758);
     await waitUntil("document.querySelector('.card-media img').naturalWidth>0");
     await click('#agentLauncher'); await click('#agentSettingsOpen');
     assert.match(await evaluate("document.querySelector('#agentConfigHint').textContent"), /本机服务托管/);

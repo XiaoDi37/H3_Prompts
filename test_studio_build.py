@@ -75,12 +75,12 @@ class StudioBuildTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "non-empty string"):
             studio.build_catalog(self.rows, [""] + self.translations[1:], self.extensions)
 
-    def test_550_coverage_and_first_seen_title_mapping(self):
-        self.assertEqual(len(self.catalog), 550)
-        self.assertEqual(len({row["id"] for row in self.catalog}), 550)
+    def test_catalog_coverage_and_first_seen_title_mapping(self):
+        self.assertEqual(len(self.catalog), 758)
+        self.assertEqual(len({row["id"] for row in self.catalog}), 758)
         unique_titles = list(dict.fromkeys(row["title"] for row in self.rows))
-        self.assertEqual(len(unique_titles), 505)
-        self.assertEqual(len(self.translations), 505)
+        self.assertEqual(len(unique_titles), 713)
+        self.assertEqual(len(self.translations), 713)
         title_map = dict(zip(unique_titles, self.translations))
         for source, record in zip(self.rows, self.catalog):
             self.assertEqual(record["id"], source["slug"])
@@ -101,7 +101,7 @@ class StudioBuildTests(unittest.TestCase):
             self.assertEqual(set(row), fields)
 
     def test_wrong_record_count_rejected(self):
-        with self.assertRaisesRegex(ValueError, "exactly 550"):
+        with self.assertRaisesRegex(ValueError, "exactly 758"):
             studio.build_catalog(self.rows[:-1], self.translations, self.extensions)
 
     def test_duplicate_id_rejected(self):
