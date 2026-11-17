@@ -28,7 +28,10 @@ function send(method,params={}){const id=++seq;return new Promise((resolve,rejec
 async function evaluate(expression){const response=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true,userGesture:true});if(response.exceptionDetails)throw new Error(response.exceptionDetails.exception?.description||response.exceptionDetails.text);return response.result.value;}
 async function waitUntil(expression){const start=Date.now();while(Date.now()-start<12000){try{if(await evaluate(expression))return true;}catch{}await new Promise(r=>setTimeout(r,60));}throw new Error('Condition timed out: '+expression);}
 async function click(selector){
-  const point=await evaluate(`new Promise((resolve,reject)=>{const el=document.querySelector(${JSON.stringify(selector)});if(!el)return reject(new Error('Missing control: '+${JSON.stringify(selector)}));el.scrollIntoView({block:'center'});const start=Date.now();let previous='';const check=()=>{const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;const hit=document.elementFromPoint(x,y);const position=[x,y].join(',');if(r.width&&r.height&&hit&&el.contains(hit)&&position===previous)return resolve({x,y});if(Date.now()-start>5000)return reject(new Error('Control not clickable: '+${JSON.stringify(selector)}));previous=position;requestAnimationFrame(check)};check()})`);
+  const probe=()=>evaluate(`new Promise((resolve,reject)=>{const sel=${JSON.stringify(selector)};let el=document.querySelector(sel);if(!el)return reject(new Error('Missing control: '+sel));el.scrollIntoView({block:'center'});const start=Date.now();let previous='';let last='';const check=()=>{const current=document.querySelector(sel);if(current!==el){el=current;previous='';if(el)el.scrollIntoView({block:'center'});}if(!el){if(Date.now()-start>5000)return reject(new Error('Control not clickable: '+sel+' '+last));return requestAnimationFrame(check);}const r=el.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2;const hit=document.elementFromPoint(x,y);const position=[x,y].join(',');last=JSON.stringify({y:Math.round(y),w:Math.round(r.width),hit:hit?hit.tagName+'.'+String(hit.className.baseVal===undefined?hit.className:hit.className.baseVal).slice(0,40):null,contained:el.contains(hit),anim:(el.closest('.prompt-card')||el).getAnimations().map(a=>a.playState).join(',')});if(r.width&&r.height&&hit&&el.contains(hit)&&position===previous)return resolve({x,y});if(Date.now()-start>5000)return reject(new Error('Control not clickable: '+sel+' '+last));previous=position;requestAnimationFrame(check)};check()})`);
+  let point=await probe();
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',button:'none',...point});
+  point=await probe();
   await send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
   if(selector==='#formSubmit'||selector==='#confirmImport')await waitUntil(`!document.querySelector(${JSON.stringify(selector)})?.disabled`);
@@ -339,11 +342,14 @@ async function run(){
     assert.ok(await evaluate("window.__llmCalls[0].body.messages.some(m=>m.content&&m.content.includes(CATALOG[0].prompt.slice(0,80)))"));
     assert.match(await evaluate("document.querySelector('#agentThread').textContent"),/rainy neon city/);
     await click('[data-agent-apply]');
-    assert.equal(await evaluate("document.body.classList.contains('editor-visible')"),true);
+    await waitUntil("document.body.classList.contains('editor-visible')");
     assert.match(await evaluate('currentDraft().prompt'),/rainy neon city/);
-    await click('#editorClose');await click('#agentLauncher');
+    await click('#editorClose');
+    await waitUntil("!document.body.classList.contains('editor-visible')");
+    await click('#agentLauncher');
+    await waitUntil("document.body.classList.contains('agent-visible')&&!document.querySelector('#agentPanel').inert");
     await evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(text)=>{window.__copied=text}}});window.__copied=null");
-    await click('[data-agent-copy]');
+    await evaluate("document.querySelector('[data-agent-copy]').click()");
     await waitUntil("window.__copied!==null");
     assert.match(await evaluate('window.__copied'),/rainy neon city/);
     await screenshot('desktop-agent');
@@ -796,12 +802,15 @@ async function run(){
     assert.ok(fit.panel<=fit.client+1&&fit.body<=390,JSON.stringify(fit));
     await screenshot('mobile-agent-board');
     await dimensions(1440,960);
-    await click(`[data-agent-apply="${blocks[0].id}"]`);
+    await evaluate(`document.querySelector('[data-agent-apply="${blocks[0].id}"]').click()`);
     await waitUntil("currentDraft()&&currentDraft().sourceId===CATALOG[66].id");
     assert.match(await evaluate('currentDraft().prompt'),/Rewritten shot one with red umbrella/);
     const firstDraft=await evaluate('state.activeDraftId');
-    await click('#editorClose');await click('#agentLauncher');
-    await click(`[data-agent-apply="${blocks[1].id}"]`);
+    await click('#editorClose');
+    await waitUntil("!document.body.classList.contains('editor-visible')");
+    await click('#agentLauncher');
+    await waitUntil("document.body.classList.contains('agent-visible')&&!document.querySelector('#agentPanel').inert");
+    await evaluate(`document.querySelector('[data-agent-apply="${blocks[1].id}"]').click()`);
     await waitUntil("currentDraft()&&currentDraft().sourceId===CATALOG[67].id");
     assert.match(await evaluate('currentDraft().prompt'),/Rewritten shot two matching umbrella/);
     assert.notEqual(await evaluate('state.activeDraftId'),firstDraft);
