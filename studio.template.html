@@ -47,10 +47,10 @@
       </section>
       <section class="search-section" aria-label="搜索与筛选">
         <div class="search-wrap"><span data-icon="search"></span><input id="searchInput" type="search" autocomplete="off" data-placeholder="searchPlaceholder" data-label="search"><kbd>/</kbd></div>
-        <div class="filter-row" id="filterRow"><select id="modelFilter" data-label="model"></select><select id="durationFilter" data-label="duration"></select><select id="aspectFilter" data-label="aspect"></select><select id="tagFilter" data-label="tags"></select><button class="text-button" id="resetFilters" data-t="reset">重置</button><select id="sortFilter" class="sort-select" data-label="sort"></select></div>
+        <div class="filter-row" id="filterRow"><button class="button filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterPopover"><span data-icon="sliders"></span><span data-t="filters">筛选</span><span class="filter-count" id="filterCount" hidden></span></button><div class="filter-popover" id="filterPopover" hidden><select id="modelFilter" data-label="model"></select><select id="durationFilter" data-label="duration"></select><select id="aspectFilter" data-label="aspect"></select><select id="tagFilter" data-label="tags"></select></div><button class="text-button" id="resetFilters" data-t="reset" hidden>重置</button><select id="sortFilter" class="sort-select" data-label="sort"></select></div>
       </section>
       <div class="category-tabs" id="categoryTabs" aria-label="分类"></div>
-      <div class="results-toolbar"><span id="resultCount" aria-live="polite"></span><span class="result-note" id="resultNote"></span></div>
+      <div class="results-toolbar"><span id="resultCount" aria-live="polite"></span><span class="result-note" id="resultNote"></span><button class="text-button" id="curatedToggle" hidden></button></div>
       <section class="card-grid" id="cardGrid" aria-label="提示词列表"></section>
       <section class="empty-state" id="emptyState" hidden></section>
       <div class="pagination"><button class="button" id="loadMore" data-t="loadMore">加载更多灵感</button><span id="pageCount"></span></div>

@@ -48,10 +48,10 @@ async function run(){
   await evaluate("state={schema:1,settings:{lang:'zh',theme:'dark',guideSeen:true},favorites:{},folders:[],drafts:[],activeDraftId:null};storageBlocked=false;window.__preReload=true;saveState()");await send('Page.reload',{ignoreCache:true});await waitUntil("!window.__preReload&&document.querySelectorAll('.prompt-card').length===24");
   await waitUntil("[...document.querySelectorAll('.card-media img')].slice(0,2).every(i=>i.complete&&i.naturalWidth>0)");
   await waitUntil("document.querySelector('#featuredImage').complete&&document.querySelector('#featuredImage').naturalWidth>0");
-  const FIRST_ID=await evaluate('CATALOG[0].id');
+  const FIRST_ID=await evaluate('CURATED_IDS[0]');
   await test('758 records, local thumbnails, bilingual titles and clean filters',async()=>{
-    const data=await evaluate(`({total:CATALOG.length,cards:document.querySelectorAll('.prompt-card').length,categories:categories.length,firstId:document.querySelector('.prompt-card').dataset.itemId,secondId:document.querySelectorAll('.prompt-card')[1].dataset.itemId,featuredHidden:document.querySelector('#featuredScene').hidden,hero:document.querySelector('#featuredTitle').textContent,featuredName:document.querySelector('#featuredName').textContent,durations:[...document.querySelector('#durationFilter').options].slice(1).map(o=>Number(o.value)),aspect:CATALOG.find(d=>d.aspect==='7:4')?.aspect,group:CATALOG.find(d=>d.aspect==='7:4')?.aspect_group,theme:document.documentElement.dataset.theme})`);
-    assert.equal(data.total,758);assert.equal(data.cards,24);assert.equal(data.categories,26);assert.equal(data.firstId,'minimax-h3-keeps-delivering-beautiful-vfx-sequences-725200-010115029');assert.equal(data.secondId,'15-second-cinematic-showdown-between-the-most-technolog-354071-010104001');assert.equal(data.featuredHidden,false);assert.match(data.hero,/下一帧/);assert.ok(data.featuredName.length>0);assert.equal(data.theme,'dark');assert.deepEqual(data.durations,[...data.durations].sort((a,b)=>a-b));assert.equal(data.aspect,'7:4');assert.equal(data.group,'16:9');
+    const data=await evaluate(`({total:CATALOG.length,cards:document.querySelectorAll('.prompt-card').length,categories:categories.length,firstId:document.querySelector('.prompt-card').dataset.itemId,secondId:document.querySelectorAll('.prompt-card')[1].dataset.itemId,curated0:CURATED_IDS[0],curated1:CURATED_IDS[1],curatedCount:CURATED_IDS.length,featuredHidden:document.querySelector('#featuredScene').hidden,hero:document.querySelector('#featuredTitle').textContent,featuredName:document.querySelector('#featuredName').textContent,durations:[...document.querySelector('#durationFilter').options].slice(1).map(o=>Number(o.value)),aspect:CATALOG.find(d=>d.aspect==='7:4')?.aspect,group:CATALOG.find(d=>d.aspect==='7:4')?.aspect_group,theme:document.documentElement.dataset.theme})`);
+    assert.equal(data.total,758);assert.equal(data.cards,24);assert.equal(data.categories,26);assert.equal(data.firstId,data.curated0);assert.equal(data.secondId,data.curated1);assert.ok(data.curatedCount>=96&&data.curatedCount<=120);assert.equal(data.featuredHidden,false);assert.match(data.hero,/下一帧/);assert.ok(data.featuredName.length>0);assert.equal(data.theme,'dark');assert.deepEqual(data.durations,[...data.durations].sort((a,b)=>a-b));assert.equal(data.aspect,'7:4');assert.equal(data.group,'16:9');
   });
   await screenshot('desktop-library');
   await test('Real search input, literal special characters and no-result reset',async()=>{
@@ -59,7 +59,7 @@ async function run(){
     assert.match(await evaluate("document.querySelector('#resultNote').textContent"),/智能扩展/);
     assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),true);
     for(const query of ['[','.*','<script>','不存在的关键词-12345']){await fill('#searchInput',query);await evaluate('new Promise(r=>setTimeout(r,180))');}
-    assert.equal(await evaluate("document.querySelector('#emptyState').hidden"),false);await click('#resetFilters');assert.equal(await evaluate("document.querySelector('#resultCount').textContent"),'758 条灵感');assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),false);
+    assert.equal(await evaluate("document.querySelector('#emptyState').hidden"),false);await click('#resetFilters');assert.equal(await evaluate("document.querySelector('#resultCount').textContent"),await evaluate("CURATED_IDS.length+' 条精选灵感'"));assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),false);
   });
   await test('Duration and approximate aspect intersection matches actual catalog',async()=>{
     await select('#durationFilter','15');await select('#aspectFilter','9:16');
@@ -89,12 +89,12 @@ async function run(){
   });
   await test('Use template, auto-save edit/notes, organize favorite and safe custom tags',async()=>{
     await click(`.prompt-card[data-item-id="${FIRST_ID}"] .use-template`);
-    assert.equal(await evaluate('currentDraft().prompt===CATALOG[0].prompt'),true);
+    assert.equal(await evaluate(`currentDraft().prompt===ITEMS.get(${JSON.stringify(FIRST_ID)}).prompt`),true);
     await fill('#draftName','雨夜城市 · 第一稿');await fill('#promptEditor','A cinematic rainy city. Slow tracking shot, warm window light.');await fill('#draftNotes','把主角换成穿红色风衣的旅人；备注不参与复制。');
     await select('#editorFolder',await evaluate('state.folders[0].id'));
     await fill('#tagInput','雨夜');await click('#addTag');await fill('#tagInput','雨夜');await click('#addTag');
     await fill('#tagInput','<img src=x onerror=alert(1)>');await click('#addTag');
-    assert.equal(await evaluate('state.favorites[CATALOG[0].id].tags.length'),2);
+    assert.equal(await evaluate(`state.favorites[${JSON.stringify(FIRST_ID)}].tags.length`),2);
     assert.equal(await evaluate("document.querySelector('#editorTags img')===null"),true);
     await click('#editorTags [data-remove-tag]:last-child');await fill('#tagInput','镜头参考');await click('#addTag');
     await evaluate('new Promise(r=>setTimeout(r,420))');
@@ -107,14 +107,14 @@ async function run(){
     await fill('#promptEditor','A new daylight scene.');await fill('#draftNotes','第二版备注');
     await click('#tabVersions');await click('[data-restore-version]');await click('#formSubmit');
     assert.match(await evaluate('currentDraft().prompt'),/rainy city/);assert.equal(await evaluate('currentDraft().versions.length'),2);
-    await click('#tabReference');assert.equal(await evaluate("document.querySelector('#referenceText').textContent===CATALOG[0].prompt"),true);await click('#tabEdit');
+    await click('#tabReference');assert.equal(await evaluate(`document.querySelector('#referenceText').textContent===ITEMS.get(${JSON.stringify(FIRST_ID)}).prompt`),true);await click('#tabEdit');
   });
   await test('Copy exports only edited prompt, never private notes',async()=>{
     await evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(text)=>{window.__copied=text}}})");
     await click('#copyDraft');assert.match(await evaluate('window.__copied'),/rainy city/);assert.equal(await evaluate("window.__copied.includes('备注')"),false);
   });
   await test('Preview defers video networking until user plays',async()=>{
-    await click(`[data-preview="${FIRST_ID}"]`);assert.equal(await evaluate("document.querySelector('#previewDialog').open"),true);assert.equal(await evaluate("document.querySelector('#previewMedia video')"),null);assert.equal(await evaluate("document.querySelector('#previewPrompt').textContent===CATALOG[0].prompt"),true);await click('#previewDialog [data-close]');
+    await click(`[data-preview="${FIRST_ID}"]`);assert.equal(await evaluate("document.querySelector('#previewDialog').open"),true);assert.equal(await evaluate("document.querySelector('#previewMedia video')"),null);assert.equal(await evaluate(`document.querySelector('#previewPrompt').textContent===ITEMS.get(${JSON.stringify(FIRST_ID)}).prompt`),true);await click('#previewDialog [data-close]');
   });
   await test('Language and theme switching preserve edits and selected filters',async()=>{
     await click('#editorClose');
@@ -269,7 +269,7 @@ async function run(){
     await select('#modelFilter','Veo 3');
     assert.equal(await evaluate("document.querySelectorAll('.prompt-card .new-badge').length"),24);
     await click('#resetFilters');
-    assert.equal(await evaluate("document.querySelectorAll('.prompt-card .new-badge').length"),0);
+    assert.equal(await evaluate("document.querySelectorAll('.prompt-card .new-badge').length"),await evaluate("CURATED_IDS.slice(0,24).filter(id=>IMPORTED_PREFIXES.some(p=>id.startsWith(p))).length"));
     await evaluate('openPalette()');await fill('#paletteInput','技能');
     assert.equal(await evaluate('paletteItems.length'),4);
     await evaluate("runPalette(paletteItems.findIndex(it=>it.label.includes('H3 导演方法')))");
@@ -300,7 +300,7 @@ async function run(){
     await click('#agentContextRemove');assert.equal(await evaluate("document.querySelector('#agentContext').hidden"),true);
     await click(`[data-preview="${FIRST_ID}"]`);await click('#previewAgent');
     assert.equal(await evaluate("document.querySelector('#previewDialog').open"),false);
-    assert.equal(await evaluate("agent.context.id===CATALOG[0].id"),true);
+    assert.equal(await evaluate(`agent.context.id===${JSON.stringify(FIRST_ID)}`),true);
     await click('#agentClose');await click('#editorToggle');await click('#agentFromEditor');
     assert.equal(await evaluate("agent.context.kind"),'draft');
     assert.equal(await evaluate("document.body.classList.contains('editor-visible')"),false);
@@ -339,7 +339,7 @@ async function run(){
     const call=await evaluate("window.__llmCalls[0]");
     assert.equal(call.url,'https://mock.llm/v1/chat/completions');
     assert.equal(call.body.model,'mock-chat');assert.equal(call.body.stream,true);
-    assert.ok(await evaluate("window.__llmCalls[0].body.messages.some(m=>m.content&&m.content.includes(CATALOG[0].prompt.slice(0,80)))"));
+    assert.ok(await evaluate(`window.__llmCalls[0].body.messages.some(m=>m.content&&m.content.includes(ITEMS.get(${JSON.stringify(FIRST_ID)}).prompt.slice(0,80)))`));
     assert.match(await evaluate("document.querySelector('#agentThread').textContent"),/rainy neon city/);
     await click('[data-agent-apply]');
     await waitUntil("document.body.classList.contains('editor-visible')");
@@ -372,7 +372,7 @@ async function run(){
     await waitUntil("state.assets.length===1&&state.assets[0].images.length===2");
     const a=await evaluate('state.assets[0]');
     assert.equal(a.name,'霓虹雨夜 · 关键帧');assert.equal(a.sourceId,FIRST_ID);
-    assert.equal(a.prompt,await evaluate('CATALOG[0].prompt'));
+    assert.equal(a.prompt,await evaluate(`ITEMS.get(${JSON.stringify(FIRST_ID)}).prompt`));
     assert.ok(a.images.every(im=>im.src.startsWith('data:image/jpeg')),JSON.stringify(a.images.map(im=>im.src.slice(0,30))));
     assert.deepEqual(a.images.map(im=>im.prompt),['neon city keyframe','traveler close-up']);
     assert.equal(await evaluate("agent.messages.find(m=>m.role==='images').savedAssetId===state.assets[0].id"),true);
@@ -494,7 +494,7 @@ async function run(){
     await evaluate("state.settings.agent.llm.baseUrl='';window.__imgCalls.length=0");
     await click('#agentImages');
     await waitUntil("!agent.busy&&window.__imgCalls.length===1");
-    assert.ok(await evaluate("window.__imgCalls[0].body.prompt.includes(CATALOG[0].prompt.slice(0,60))"));
+    assert.ok(await evaluate(`window.__imgCalls[0].body.prompt.includes(ITEMS.get(${JSON.stringify(FIRST_ID)}).prompt.slice(0,60))`));
     await evaluate("state.settings.agent.llm.baseUrl='https://mock.llm/v1';saveState()");
   });
   await test('Connection failures are classified as CORS block or unreachable address',async()=>{
@@ -586,14 +586,14 @@ async function run(){
   await test('Card copy, recent history and undo keep the flow fast',async()=>{
     await evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__copied=text}}});window.__copied=null");
     await click(`.prompt-card[data-item-id="${FIRST_ID}"] .card-copy`);
-    assert.equal(await evaluate('window.__copied'),await evaluate('CATALOG[0].prompt'));
+    assert.equal(await evaluate('window.__copied'),await evaluate(`ITEMS.get(${JSON.stringify(FIRST_ID)}).prompt`));
     assert.equal(await evaluate('state.recent[0].id'),FIRST_ID);
     await click('#mainNav [data-view="recent"]');
     assert.equal(await evaluate("document.querySelector('.prompt-card').dataset.itemId"),FIRST_ID);
     assert.match(await evaluate("document.querySelector('#viewTitle').textContent"),/最近/);
     assert.equal(await evaluate("document.querySelector('#mainNav [data-view=\"recent\"]').classList.contains('active')"),true);
     await screenshot('desktop-recent');
-    const OTHER=await evaluate('CATALOG[5].id');
+    const OTHER=await evaluate('CURATED_IDS[1]');
     await click('#mainNav [data-view="library"]');
     await evaluate(`state.favorites['${OTHER}']={folderId:null,tags:[],createdAt:now()};saveState();renderLibrary()`);
     await click(`.prompt-card[data-item-id="${OTHER}"] .card-heart`);
@@ -850,6 +850,52 @@ async function run(){
     await evaluate("document.body.classList.remove('printing-board')");
     assert.equal(await evaluate("getComputedStyle(document.querySelector('#printSheet')).display"),'none');
     await evaluate("state.board=[];saveState();renderNav();setView('library')");
+  });
+  await test('Curated default shows quality picks and full library stays reachable',async()=>{
+    await dimensions(1440,960);await evaluate("setView('library')");
+    const base=await evaluate("({n:CURATED_IDS.length,shown:filteredItems().length,count:document.querySelector('#resultCount').textContent,note:document.querySelector('#resultNote').textContent,toggle:document.querySelector('#curatedToggle').textContent,models:[...new Set([...document.querySelectorAll('.prompt-card')].map(c=>ITEMS.get(c.dataset.itemId).model))],minLen:Math.min(...[...document.querySelectorAll('.prompt-card')].map(c=>ITEMS.get(c.dataset.itemId).prompt.length))})");
+    assert.equal(base.shown,758);assert.equal(base.count,base.n+' 条精选灵感');assert.match(base.note,/评分精选/);assert.equal(base.toggle,'查看全库');
+    assert.equal(base.models.length,3);assert.ok(base.minLen>=200,JSON.stringify(base));
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('.prompt-card')].map(c=>c.dataset.itemId)"),await evaluate("CURATED_IDS.slice(0,24)"));
+    await click('#curatedToggle');await waitUntil("ui.sort==='all'");
+    const all=await evaluate("({count:document.querySelector('#resultCount').textContent,first:document.querySelector('.prompt-card').dataset.itemId,hero:document.querySelector('#featuredScene').hidden,toggle:document.querySelector('#curatedToggle').textContent})");
+    assert.equal(all.count,'758 条灵感');assert.equal(all.first,await evaluate('CATALOG[0].id'));assert.equal(all.hero,true);assert.equal(all.toggle,'回到精选');
+    await click('#loadMore');assert.equal(await evaluate("document.querySelectorAll('.prompt-card').length"),48);
+    await click('#curatedToggle');await waitUntil("ui.sort==='source'");
+    assert.equal(await evaluate("document.querySelectorAll('.prompt-card').length"),24);
+    await fill('#searchInput','不存在的关键词-xyz');await evaluate('new Promise(r=>setTimeout(r,180))');
+    assert.equal(await evaluate("document.querySelector('#curatedToggle').hidden"),true);
+    await click('#resetFilters');
+  });
+  await test('Filter popover folds controls, counts active filters and closes cleanly',async()=>{
+    await evaluate("setView('library')");
+    assert.equal(await evaluate("document.querySelector('#filterPopover').hidden"),true);
+    assert.equal(await evaluate("document.querySelector('#resetFilters').hidden"),true);
+    assert.equal(await evaluate("document.querySelector('#filterCount').hidden"),true);
+    await click('#filterToggle');await waitUntil("!document.querySelector('#filterPopover').hidden");
+    assert.equal(await evaluate("document.querySelector('#filterToggle').getAttribute('aria-expanded')"),'true');
+    const box=await evaluate("(()=>{const p=document.querySelector('#filterPopover').getBoundingClientRect();return{left:Math.round(p.left),right:Math.round(p.right),top:Math.round(p.top),bottom:Math.round(p.bottom),vw:window.innerWidth,vh:window.innerHeight}})()");
+    assert.ok(box.left>=0&&box.right<=box.vw&&box.top>=0&&box.bottom<=box.vh,JSON.stringify(box));
+    await select('#modelFilter','Veo 3');
+    assert.equal(await evaluate("document.querySelector('#filterCount').textContent"),'1');
+    assert.equal(await evaluate("document.querySelector('#resetFilters').hidden"),false);
+    await select('#durationFilter','15');
+    assert.equal(await evaluate("document.querySelector('#filterCount').textContent"),'2');
+    assert.equal(await evaluate("filteredItems().every(d=>d.model==='Veo 3'&&d.duration_seconds===15)"),true);
+    await evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+    await waitUntil("document.querySelector('#filterPopover').hidden");
+    await click('#filterToggle');await waitUntil("!document.querySelector('#filterPopover').hidden");
+    await evaluate("document.querySelector('#viewTitle').click()");
+    await waitUntil("document.querySelector('#filterPopover').hidden");
+    await click('#resetFilters');
+    assert.equal(await evaluate("document.querySelector('#filterCount').hidden"),true);
+    assert.equal(await evaluate("filteredItems().length"),758);
+    await dimensions(390,844);await click('#filterToggle');await waitUntil("!document.querySelector('#filterPopover').hidden");
+    const m=await evaluate("(()=>{const p=document.querySelector('#filterPopover').getBoundingClientRect();return{left:Math.round(p.left),right:Math.round(p.right),vw:window.innerWidth}})()");
+    assert.ok(m.left>=0&&m.right<=m.vw+1,JSON.stringify(m));
+    await screenshot('mobile-filter-popover');
+    await evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+    await dimensions(1440,960);await evaluate("setView('library')");
   });
   await test('Guided tour spotlights key areas, steps, finishes and reopens',async()=>{
     await dimensions(1440,960);

@@ -153,6 +153,87 @@ def load_catalog(base_dir=BASE_DIR):
     return build_catalog(*inputs, base_dir=base_dir)
 
 
+CURATED_TOKEN = "/*__CURATED_IDS__*/[]"
+CURATED_QUOTA = {"MiniMax H3": 84, "Seedance 2.5": 18, "Veo 3": 18}
+CURATED_LIMIT = 120
+CURATED_MIN_SCORE = 8.0
+CURATED_MIN_LENGTH = 200
+CAMERA_FAMILIES = (
+    r"dolly|pan\b|tilt|crane|tracking|zoom|handheld|推轨|摇移|跟拍|环绕",
+    r"close-?up|wide shot|medium shot|extreme|特写|全景|中景|远景",
+    r"low angle|high angle|aerial|drone|over-the-shoulder|俯拍|仰拍|肩后",
+    r"lens|\d+\s*mm|焦段|光圈",
+)
+LIGHT_PATTERN = r"golden hour|volumetric|backlit|rim light|neon|chiaroscuro|soft light|hard light|silhouette|candlelight|moonlight|sunlight|lighting|光线|逆光|霓虹|烛光|月光"
+MOTION_PATTERN = r"slow motion|speed ramp|particles|fluid|splash|wind|rain|snow|smoke|fabric|motion|physics|慢动作|粒子|飞溅"
+AUDIO_PATTERN = r"sound|audio|music|score|sfx|foley|voice|whisper|dialogue|soundscape|声音|音乐|音效|旁白"
+STRUCT_PATTERN = r"(?m)^\s*(?:\*\*)?(scene|subject|camera|lighting|style|audio|sound|motion|action|environment|场景|主体|镜头|光线|风格|声音|运动|动作|环境)(?:\*\*)?\s*[:：]"
+
+
+def quality_score(item):
+    """Offline richness score: length, camera/light/motion/audio language, structure."""
+    prompt = item.get("prompt", "")
+    length = len(prompt)
+    score = max(0.0, min(6.0, (min(length, 6000) - 150) / 1200 * 6))
+    if length < CURATED_MIN_LENGTH:
+        score -= 4
+    if length > 9000:
+        score -= 2
+    if length > 14000:
+        score -= 4
+    score += 1.2 * sum(
+        1 for family in CAMERA_FAMILIES if re.search(family, prompt, re.I)
+    )
+    for pattern, weight in ((LIGHT_PATTERN, 1.5), (MOTION_PATTERN, 1.0), (AUDIO_PATTERN, 1.0)):
+        if re.search(pattern, prompt, re.I):
+            score += weight
+    sections = len(re.findall(STRUCT_PATTERN, prompt, re.I))
+    score += 2 if sections >= 2 else (1 if sections == 1 else 0)
+    if re.search(r"\d+\s*(mm|fps)", prompt, re.I):
+        score += 0.5
+    return round(score, 2)
+
+
+def curated_order(catalog):
+    """Score-ranked, model-quota'd, category/model-diverse default selection."""
+    ranked = sorted(catalog, key=lambda item: (-quality_score(item), item.get("id", "")))
+    used = {}
+    picked = []
+    for item in ranked:
+        if len(picked) >= CURATED_LIMIT:
+            break
+        model = item.get("model", "")
+        if used.get(model, 0) >= CURATED_QUOTA.get(model, 0):
+            continue
+        if quality_score(item) < CURATED_MIN_SCORE or len(item.get("prompt", "")) < CURATED_MIN_LENGTH:
+            continue
+        used[model] = used.get(model, 0) + 1
+        picked.append(item)
+    pool = list(picked)
+    ordered = []
+    recent_categories = []
+    recent_models = []
+    while pool:
+        choice = None
+        for index, item in enumerate(pool):
+            if (item.get("category", "other") not in recent_categories[-3:]
+                    and item.get("model", "") not in recent_models[-2:]):
+                choice = index
+                break
+        if choice is None:
+            for index, item in enumerate(pool):
+                if item.get("category", "other") not in recent_categories[-2:]:
+                    choice = index
+                    break
+        if choice is None:
+            choice = 0
+        item = pool.pop(choice)
+        ordered.append(item.get("id", ""))
+        recent_categories.append(item.get("category", "other"))
+        recent_models.append(item.get("model", ""))
+    return ordered
+
+
 def script_safe_json(catalog):
     """Escape HTML-sensitive characters without changing decoded JSON values."""
     return json.dumps(catalog, ensure_ascii=False, allow_nan=False,
@@ -163,6 +244,7 @@ def render_page(template, css, js, catalog):
     for marker in PLACEHOLDERS:
         if template.count(marker) != 1:
             raise ValueError(f"Template must contain exactly one {marker}")
+    js = js.replace(CURATED_TOKEN, script_safe_json(curated_order(catalog)))
     replacements = dict(zip(PLACEHOLDERS, (
         f"<style>{css}</style>",
         '<script id="catalog-data" type="application/json">'

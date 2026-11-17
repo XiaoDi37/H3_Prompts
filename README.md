@@ -11,6 +11,7 @@
 ## 功能
 
 - **分镜库**：758 条视频提示词，缩略图全部本地化；支持关键词搜索、模型 / 时长 / 画幅 / 分类筛选、相似分镜推荐；外部导入条目带 NEW 徽标
+- **精选首屏**：打开默认展示离线质量评分筛出的 117 条精选（提示词长度、镜头语言、光线 / 运动 / 声音、结构化段落加权，模型配额与分类分散排序），首屏不再被低质与重复条目淹没；「查看全库」或任意搜索 / 筛选即回到全部 758 条；四个筛选控件收进单个「筛选」按钮，激活条件数以徽标提示
 - **收藏与标签**：按收藏夹分组、自定义标签，支持 JSON 备份导出 / 导入
 - **中英双语界面**，深色 / 浅色主题一键切换
 - **提示词实验室**：草稿编辑、版本历史（含版本对照 diff）、创作笔记；提示词解剖、智能补全、一键增强
@@ -85,7 +86,7 @@ node --check studio.js     # 语法检查（可选）
 # 单元测试（28 项）：构建产物完整性 + 本机服务行为
 python -B -m unittest test_studio_build test_studio_server -q
 
-# 浏览器端到端（54 项）：需先启动静态服务与无头 Chrome
+# 浏览器端到端（56 项）：需先启动静态服务与无头 Chrome
 python -m http.server 8786 --bind 127.0.0.1
 # 另开终端：Chrome --headless=new --remote-debugging-port=9335 --user-data-dir=studio-test-artifacts/chrome-profile about:blank
 node test_studio_browser.cjs
