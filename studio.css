@@ -264,7 +264,8 @@ body:not(.editor-collapsed) .app-shell { grid-template-columns: 232px minmax(0, 
 .library-heading { margin-bottom: 20px; }
 .heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 8px; }
 .heading-row h1 { font-family: var(--font-display); font-size: clamp(26px, 3vw, 38px); font-weight: 700; letter-spacing: .02em; line-height: 1.15; }
-.heading-tools { display: flex; gap: 6px; }
+.heading-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.board-export-group { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 @container library (max-width: 900px) {
   .heading-row { flex-wrap: wrap; align-items: flex-start; }
   .heading-tools { flex-wrap: wrap; }
@@ -949,4 +950,20 @@ dialog::backdrop { background: var(--scrim); backdrop-filter: blur(6px); }
 @media (forced-colors: active) {
   .button, .nav-item, .category-tab, .prompt-card, .tag { border: 1px solid CanvasText; }
   .status-dot, .brand-mark i, .vf-corner { forced-color-adjust: none; }
+}
+.print-sheet { display: none; }
+@media print {
+  @page { margin: 14mm; }
+  body.printing-board { background: #fff; }
+  body.printing-board > *:not(.print-sheet) { display: none !important; }
+  body.printing-board .print-sheet { display: block; color: #111; background: #fff; font-family: var(--font-body); }
+  .print-sheet header { border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 14px; }
+  .print-sheet header h1 { font-family: var(--font-display); font-size: 20px; letter-spacing: .02em; }
+  .print-sheet header p { font-family: var(--font-mono); font-size: 11px; color: #444; margin-top: 4px; }
+  .print-shot { break-inside: avoid; page-break-inside: avoid; border: 1px solid #999; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+  .print-shot h2 { font-family: var(--font-display); font-size: 14px; margin-bottom: 4px; }
+  .print-meta { font-family: var(--font-mono); font-size: 10.5px; color: #555; margin-bottom: 6px; }
+  .print-shot pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 11px; line-height: 1.55; background: #f4f4f4; border: 1px solid #ddd; border-radius: 4px; padding: 8px 10px; }
+  .print-note { font-size: 11.5px; color: #222; margin-top: 6px; }
+  .print-src { font-family: var(--font-mono); font-size: 10px; color: #666; margin-top: 4px; overflow-wrap: anywhere; }
 }

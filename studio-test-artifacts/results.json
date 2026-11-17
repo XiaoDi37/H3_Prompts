@@ -1,5 +1,5 @@
 {
-  "passed": 50,
+  "passed": 52,
   "tests": [
     "758 records, local thumbnails, bilingual titles and clean filters",
     "Real search input, literal special characters and no-result reset",
@@ -50,6 +50,8 @@
     "Responsive mobile and narrow desktop layouts never overflow",
     "Sequence board orders shots, keeps continuity notes and exports production sheets",
     "Version compare shows added and removed content against the current edit",
+    "Sequence board reaches the copilot as whole-scene context and per-shot rewrites apply back",
+    "Print stylesheet renders a full production sheet",
     "File-mode standalone works without fetch or dependencies"
   ],
   "consoleErrors": []
