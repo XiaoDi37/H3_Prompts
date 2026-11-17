@@ -19,6 +19,7 @@
 - **导演技能库**：内置 3 套署名开源导演技能（H3 导演方法、H3 语法与硬限制、Seedance 2.5 导演方法），注入系统提示词约束改写与关键图拆解，可一键「用技能改写」
 - **素材库**：生成的图片与提示词按组保存，启用技能时自动打上技能标签归组，随时插入草稿复用
 - **效率工具**：命令面板（含技能切换）、最近使用、卡片一键复制、撤销
+- **新手引导**：首次打开自动弹出聚光灯分步导览（搜索→分镜卡片→创作台→导航→智能体→命令面板），高亮真实界面并滚动定位；可跳过、看完自动标记，顶栏问号或命令面板随时重看；支持方向键翻步、Esc 退出，中英双语、移动端不溢出
 - **完全离线**：数据与缩略图全部内嵌进单个 HTML 文件，断网可用
 
 ## 快速开始
@@ -84,7 +85,7 @@ node --check studio.js     # 语法检查（可选）
 # 单元测试（28 项）：构建产物完整性 + 本机服务行为
 python -B -m unittest test_studio_build test_studio_server -q
 
-# 浏览器端到端（52 项）：需先启动静态服务与无头 Chrome
+# 浏览器端到端（54 项）：需先启动静态服务与无头 Chrome
 python -m http.server 8786 --bind 127.0.0.1
 # 另开终端：Chrome --headless=new --remote-debugging-port=9335 --user-data-dir=studio-test-artifacts/chrome-profile about:blank
 node test_studio_browser.cjs

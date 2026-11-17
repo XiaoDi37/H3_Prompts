@@ -885,6 +885,49 @@ dialog::backdrop { background: var(--scrim); backdrop-filter: blur(6px); }
 .toast-action { pointer-events: auto; color: var(--amber); font-weight: 800; font-size: 12px; letter-spacing: .06em; border: 1px solid color-mix(in srgb, var(--amber) 50%, transparent); border-radius: 8px; padding: 4px 12px; flex: none; }
 .toast-action:hover { background: color-mix(in srgb, var(--amber) 14%, transparent); }
 
+/* ============ guided tour ============ */
+.guide-overlay { position: fixed; inset: 0; z-index: 200; pointer-events: auto; }
+.guide-overlay[hidden] { display: none; }
+.guide-spot {
+  position: absolute; pointer-events: none; border-radius: 12px;
+  box-shadow: 0 0 0 9999px var(--scrim), 0 0 0 2px var(--amber), 0 0 30px 8px rgba(255, 158, 61, .4);
+  transition: top .28s cubic-bezier(.4, 0, .2, 1), left .28s cubic-bezier(.4, 0, .2, 1), width .28s cubic-bezier(.4, 0, .2, 1), height .28s cubic-bezier(.4, 0, .2, 1);
+}
+.guide-spot::after { content: ''; position: absolute; inset: -7px; border-radius: 17px; border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent); animation: guide-pulse 1.9s ease-in-out infinite; }
+.guide-spot.no-target { box-shadow: 0 0 0 9999px var(--scrim); }
+.guide-spot.no-target::after { display: none; }
+@keyframes guide-pulse { 0%, 100% { opacity: .3; transform: scale(1); } 50% { opacity: .85; transform: scale(1.025); } }
+.guide-card {
+  position: absolute; width: min(360px, calc(100vw - 32px)); max-height: calc(100dvh - 24px); overflow-y: auto;
+  background: var(--glass); backdrop-filter: blur(16px);
+  border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow-dialog);
+  padding: 15px 18px 14px; color: var(--ink); pointer-events: auto;
+}
+.guide-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 7px; }
+.guide-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--amber); }
+.guide-eyebrow svg { width: 14px; height: 14px; }
+.guide-close { width: 28px; height: 28px; flex: none; }
+.guide-card h2 { font-family: var(--font-display); font-size: 19px; line-height: 1.25; margin: 2px 0 6px; }
+.guide-card p { font-size: 12.5px; line-height: 1.65; color: var(--ink-2); margin: 0 0 12px; }
+.guide-progress { display: flex; gap: 6px; margin-bottom: 13px; }
+.guide-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--line-strong); transition: background .2s, width .2s; }
+.guide-dot.done { background: color-mix(in srgb, var(--amber) 50%, transparent); }
+.guide-dot.active { background: var(--amber); width: 20px; }
+.guide-actions { display: flex; align-items: center; gap: 10px; }
+.guide-step-count { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-3); white-space: nowrap; }
+.guide-nav { display: flex; gap: 8px; margin-left: auto; }
+.guide-actions .button { padding: 8px 14px; font-size: 12.5px; }
+.button.ghost { background: transparent; border-color: var(--line); color: var(--ink-3); }
+.button.ghost:hover { color: var(--ink-2); background: var(--surface-2); border-color: var(--line-strong); }
+@media (max-width: 760px) {
+  .guide-card { left: 12px !important; right: 12px !important; bottom: 12px !important; top: auto !important; width: auto; max-height: calc(100dvh - 24px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-spot, .guide-card { transition: none; }
+  .guide-spot::after { animation: none; }
+}
+@media print { .guide-overlay { display: none !important; } }
+
 /* ============ responsive ============ */
 @media (max-width: 1180px) {
   .app-shell, body:not(.editor-collapsed) .app-shell { grid-template-columns: 232px minmax(0, 1fr); }

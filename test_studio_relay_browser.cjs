@@ -91,7 +91,7 @@ async function run() {
   await send('Page.navigate', { url: PAGE });
   await waitUntil("location.href.startsWith('http://127.0.0.1:8793')&&document.querySelectorAll('.prompt-card').length===24");
   const FIRST_ID = await evaluate('CATALOG[0].id');
-  await evaluate("state.assets=[];saveState();renderNav()");
+  await evaluate("state.assets=[];state.settings.guideSeen=true;saveState();renderNav();if(guide.open)endGuide(false)");
 
   await test('Local service hosts the page and enables the same-origin relay', async () => {
     assert.equal(await evaluate('RELAY'), '/relay');

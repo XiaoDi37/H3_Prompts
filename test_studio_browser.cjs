@@ -45,7 +45,7 @@ async function reload(){loadFired=false;await send('Page.reload',{ignoreCache:tr
 async function test(name,action){await action();results.push(name);console.log('PASS',name);}
 async function run(){
   await connect();await dimensions(1440);await send('Page.navigate',{url:URL});await waitUntil("location.href.startsWith('http://127.0.0.1:8786')&&document.querySelectorAll('.prompt-card').length===24");
-  await evaluate("state={schema:1,settings:{lang:'zh',theme:'dark'},favorites:{},folders:[],drafts:[],activeDraftId:null};storageBlocked=false;window.__preReload=true;saveState()");await send('Page.reload',{ignoreCache:true});await waitUntil("!window.__preReload&&document.querySelectorAll('.prompt-card').length===24");
+  await evaluate("state={schema:1,settings:{lang:'zh',theme:'dark',guideSeen:true},favorites:{},folders:[],drafts:[],activeDraftId:null};storageBlocked=false;window.__preReload=true;saveState()");await send('Page.reload',{ignoreCache:true});await waitUntil("!window.__preReload&&document.querySelectorAll('.prompt-card').length===24");
   await waitUntil("[...document.querySelectorAll('.card-media img')].slice(0,2).every(i=>i.complete&&i.naturalWidth>0)");
   await waitUntil("document.querySelector('#featuredImage').complete&&document.querySelector('#featuredImage').naturalWidth>0");
   const FIRST_ID=await evaluate('CATALOG[0].id');
@@ -851,8 +851,71 @@ async function run(){
     assert.equal(await evaluate("getComputedStyle(document.querySelector('#printSheet')).display"),'none');
     await evaluate("state.board=[];saveState();renderNav();setView('library')");
   });
+  await test('Guided tour spotlights key areas, steps, finishes and reopens',async()=>{
+    await dimensions(1440,960);
+    await evaluate("setView('library');state.settings.guideSeen=true;saveState()");
+    await click('#guideLauncher');
+    await waitUntil("guide.open&&!document.querySelector('#guideOverlay').hidden");
+    await waitUntil("(()=>{const s=document.querySelector('#guideSpot').getBoundingClientRect();const t=document.querySelector('.search-wrap').getBoundingClientRect();return Math.abs(s.left-t.left)<=10&&Math.abs(s.top-t.top)<=10})()");
+    const s1=await evaluate("(()=>{const s=document.querySelector('#guideSpot').getBoundingClientRect();const t=document.querySelector('.search-wrap').getBoundingClientRect();const c=document.querySelector('#guideCard').getBoundingClientRect();return{title:document.querySelector('#guideTitle').textContent,count:document.querySelector('#guideCount').textContent,dots:document.querySelectorAll('#guideProgress .guide-dot').length,active:document.querySelectorAll('#guideProgress .guide-dot.active').length,prevDisabled:document.querySelector('#guidePrev').disabled,next:document.querySelector('#guideNext').textContent,dx:Math.abs(s.left-t.left),dy:Math.abs(s.top-t.top),spotW:Math.round(s.width),cardRight:Math.round(c.right),cardBottom:Math.round(c.bottom),shellInert:document.querySelector('.app-shell').inert,z:getComputedStyle(document.querySelector('#guideOverlay')).zIndex}})()");
+    assert.equal(s1.title,'搜索与筛选');assert.equal(s1.count,'第 1 / 6 步');assert.equal(s1.dots,6);assert.equal(s1.active,1);
+    assert.equal(s1.prevDisabled,true);assert.equal(s1.next,'下一步');assert.ok(s1.spotW>40,JSON.stringify(s1));
+    assert.ok(s1.dx<=10&&s1.dy<=10,JSON.stringify(s1));assert.ok(s1.cardRight<=1440&&s1.cardBottom<=960,JSON.stringify(s1));
+    assert.equal(s1.shellInert,true);assert.equal(s1.z,'200');
+    await screenshot('desktop-guide');
+    await click('#guideNext');await waitUntil("guide.index===1");
+    await waitUntil("(()=>{const s=document.querySelector('#guideSpot').getBoundingClientRect();const t=document.querySelector('.prompt-card').getBoundingClientRect();return Math.abs(s.left-t.left)<=10&&Math.abs(s.top-t.top)<=10})()");
+    const s2=await evaluate("({title:document.querySelector('#guideTitle').textContent,count:document.querySelector('#guideCount').textContent,prevDisabled:document.querySelector('#guidePrev').disabled})");
+    assert.equal(s2.title,'灵感分镜卡片');assert.equal(s2.count,'第 2 / 6 步');assert.equal(s2.prevDisabled,false);
+    await click('#guidePrev');await waitUntil("guide.index===0");
+    assert.equal(await evaluate("document.querySelector('#guideTitle').textContent"),'搜索与筛选');
+    await evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))");await waitUntil("guide.index===1");
+    for(let target=2;target<=5;target++){await click('#guideNext');await waitUntil(`guide.index===${target}`);}
+    const last=await evaluate("({index:guide.index,next:document.querySelector('#guideNext').textContent,title:document.querySelector('#guideTitle').textContent})");
+    assert.equal(last.index,5);assert.equal(last.next,'完成');assert.equal(last.title,'命令面板');
+    await click('#guideNext');await waitUntil("document.querySelector('#guideOverlay').hidden&&!guide.open");
+    assert.equal(await evaluate("state.settings.guideSeen"),true);
+    assert.equal(await evaluate("document.querySelector('.app-shell').inert"),false);
+    await click('#paletteOpen');await waitUntil("document.querySelector('#paletteDialog').open");
+    await fill('#paletteInput','新手引导');await waitUntil("document.querySelector('#paletteList .palette-item')");
+    await evaluate("document.querySelector('#paletteList .palette-item').click()");
+    await waitUntil("guide.open&&!document.querySelector('#guideOverlay').hidden&&guide.index===0");
+    await click('#guideSkip');await waitUntil("document.querySelector('#guideOverlay').hidden&&!guide.open");
+    await evaluate("startGuide()");await waitUntil("guide.open");
+    await evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");await waitUntil("!guide.open&&document.querySelector('#guideOverlay').hidden");
+    await evaluate("startGuide()");await waitUntil("guide.open");
+    await evaluate("state.settings.lang='en';renderAll()");await waitUntil("document.querySelector('#guideTitle').textContent==='Search & filter'");
+    assert.equal(await evaluate("document.querySelector('#guideNext').textContent"),'Next');
+    await evaluate("state.settings.lang='zh';renderAll();endGuide(false)");await waitUntil("!guide.open");
+    await evaluate("setView('library')");
+  });
+  await test('Guided tour auto-opens once, persists and fits mobile',async()=>{
+    await dimensions(1440,960);await evaluate("setView('library')");
+    await evaluate("state.settings.guideSeen=false;saveState();window.__preReload=true");
+    await reload();await waitUntil("!window.__preReload&&document.querySelectorAll('.prompt-card').length===24");
+    await waitUntil("guide.open&&!document.querySelector('#guideOverlay').hidden");
+    assert.equal(await evaluate("state.settings.guideSeen"),true);
+    await evaluate("endGuide(false)");await waitUntil("!guide.open");
+    await evaluate("window.__preReload=true");await reload();
+    await waitUntil("!window.__preReload&&document.querySelectorAll('.prompt-card').length===24");
+    await evaluate("new Promise(r=>setTimeout(r,1200))");
+    assert.equal(await evaluate("guide.open"),false);
+    assert.equal(await evaluate("document.querySelector('#guideOverlay').hidden"),true);
+    await dimensions(390,844);
+    await evaluate("startGuide()");await waitUntil("guide.open&&document.querySelector('#guideCard').getBoundingClientRect().width>0");
+    const fit=await evaluate("(()=>{const c=document.querySelector('#guideCard').getBoundingClientRect();return{left:Math.round(c.left),right:Math.round(c.right),top:Math.round(c.top),bottom:Math.round(c.bottom),vw:window.innerWidth,vh:window.innerHeight}})()");
+    assert.ok(fit.left>=0&&fit.right<=fit.vw+1&&fit.top>=0&&fit.bottom<=fit.vh+1,JSON.stringify(fit));
+    for(let target=1;target<=5;target++){await evaluate("guideNext()");await waitUntil(`guide.index===${target}`);}
+    assert.equal(await evaluate("document.querySelector('#guideNext').textContent"),'完成');
+    const fitLast=await evaluate("(()=>{const c=document.querySelector('#guideCard').getBoundingClientRect();return{right:Math.round(c.right),bottom:Math.round(c.bottom),vw:window.innerWidth,vh:window.innerHeight}})()");
+    assert.ok(fitLast.right<=fitLast.vw+1&&fitLast.bottom<=fitLast.vh+1,JSON.stringify(fitLast));
+    await screenshot('mobile-guide');
+    await evaluate("guideNext()");await waitUntil("!guide.open");
+    await dimensions(1440,960);
+    await evaluate("state.settings.guideSeen=true;saveState();setView('library')");
+  });
   await test('File-mode standalone works without fetch or dependencies',async()=>{
-    await dimensions(1440,960);await send('Page.navigate',{url:'file:///'+ROOT.replaceAll('\\','/')+'/video-prompt-studio.html'});await waitUntil("location.protocol==='file:'&&document.querySelectorAll('.prompt-card').length===24");await waitUntil("document.querySelector('.card-media img').naturalWidth>0");assert.equal(await evaluate('CATALOG.length'),758);
+    await dimensions(1440,960);await send('Page.navigate',{url:'file:///'+ROOT.replaceAll('\\','/')+'/video-prompt-studio.html'});await waitUntil("location.protocol==='file:'&&document.querySelectorAll('.prompt-card').length===24");await evaluate("state.settings.guideSeen=true;saveState()");await waitUntil("document.querySelector('.card-media img').naturalWidth>0");assert.equal(await evaluate('CATALOG.length'),758);
   });
   assert.equal(browserErrors.length,0,JSON.stringify(browserErrors));
   await fs.writeFile(path.join(ARTIFACTS,'results.json'),JSON.stringify({passed:results.length,tests:results,consoleErrors:browserErrors},null,2));

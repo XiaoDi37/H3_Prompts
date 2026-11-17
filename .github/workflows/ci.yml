@@ -47,7 +47,7 @@ jobs:
           done
           curl -sf http://127.0.0.1:9335/json/version >/dev/null || { cat chrome.log; exit 1; }
           curl -sf http://127.0.0.1:8786/video-prompt-studio.html >/dev/null
-      - name: Browser end-to-end (52 tests)
+      - name: Browser end-to-end (54 tests)
         run: node test_studio_browser.cjs
       - name: Relay end-to-end (6 tests)
         run: node test_studio_relay_browser.cjs
