@@ -6,7 +6,7 @@ const { spawn, spawnSync } = require('node:child_process');
 
 const ROOT = __dirname;
 const ARTIFACTS = path.join(ROOT, 'studio-test-artifacts');
-const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const CHROME = process.env.CHROME_BIN || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : 'google-chrome');
 const UPSTREAM_PORT = 8792, STUDIO_PORT = 8793, CDP_PORT = 9336;
 const PAGE = `http://127.0.0.1:${STUDIO_PORT}/`;
 const TINY_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
@@ -85,7 +85,7 @@ async function run() {
   await new Promise(resolve => upstream.listen(UPSTREAM_PORT, '127.0.0.1', resolve));
   studio = spawn('python', ['start_studio.py', '--port', String(STUDIO_PORT), '--no-browser'], { cwd: ROOT, stdio: 'ignore' });
   await waitForHttp(PAGE);
-  chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', `--remote-debugging-port=${CDP_PORT}`, '--remote-debugging-address=127.0.0.1', `--user-data-dir=${path.join(ARTIFACTS, 'chrome-relay-profile')}`, 'about:blank'], { stdio: 'ignore' });
+  chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', ...(process.env.CI ? ['--no-sandbox'] : []), `--remote-debugging-port=${CDP_PORT}`, '--remote-debugging-address=127.0.0.1', `--user-data-dir=${path.join(ARTIFACTS, 'chrome-relay-profile')}`, 'about:blank'], { stdio: 'ignore', detached: process.platform !== 'win32' });
   await waitForHttp(`http://127.0.0.1:${CDP_PORT}/json/list`);
   await connect(); await dimensions(1440);
   await send('Page.navigate', { url: PAGE });
@@ -165,7 +165,10 @@ async function run() {
 
 function cleanup() {
   try { socket?.close(); } catch {}
-  if (chrome?.pid) spawnSync('taskkill', ['/F', '/T', '/PID', String(chrome.pid)]);
+  if (chrome?.pid) {
+    if (process.platform === 'win32') spawnSync('taskkill', ['/F', '/T', '/PID', String(chrome.pid)]);
+    else { try { process.kill(-chrome.pid, 'SIGKILL'); } catch { try { chrome.kill('SIGKILL'); } catch {} } }
+  }
   try { studio?.kill(); } catch {}
   try { upstream.close(); } catch {}
 }

@@ -92,11 +92,17 @@ node test_studio_browser.cjs
 node test_studio_relay_browser.cjs
 ```
 
-浏览器测试需要本机安装 Chrome 与 Node.js 22+（使用内置 WebSocket）。测试截图与结果输出在 `studio-test-artifacts/`。
+浏览器测试需要本机安装 Chrome 与 Node.js 22+（使用内置 WebSocket）。测试截图与结果输出在 `studio-test-artifacts/`。仓库附带 GitHub Actions CI（`.github/workflows/ci.yml`），推送与 PR 自动跑单元、构建与两组浏览器端到端；Linux 下可用 `CHROME_BIN` 环境变量指定 Chrome 路径。
 
 ## 离线分发包
 
-`FRAME-studio-offline.zip`（约 50MB）包含单文件页面、启动脚本与全部 758 张缩略图，解压即用，适合拷到无网环境。
+离线包不再随仓库存储（避免超出 GitHub 大文件限制）：到 [Releases 页面](https://github.com/XiaoDi37/H3_Prompts/releases) 下载 `FRAME-studio-offline.zip`（单文件页面 + 启动脚本 + NOTICE + 全部 758 张缩略图），解压即用，适合拷到无网环境。
+
+修改数据或页面后本地重建：
+
+```bash
+python build_offline.py   # 输出 FRAME-studio-offline.zip 并做 CRC 校验
+```
 
 ## 目录结构
 
@@ -118,7 +124,8 @@ node test_studio_relay_browser.cjs
 ├── test_studio_browser.cjs           # 浏览器端到端测试
 ├── test_studio_relay_browser.cjs     # 中继端到端测试
 ├── studio-test-artifacts/            # 测试截图与结果
-└── FRAME-studio-offline.zip          # 离线分发包
+├── build_offline.py                  # 离线分发包构建器（CRC 校验）
+└── .github/workflows/ci.yml          # CI：单元 + 构建 + 浏览器/中继端到端
 ```
 
 ## 数据来源

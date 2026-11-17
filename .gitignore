@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+FRAME-studio-offline.zip
 studio-test-artifacts/chrome-profile/
 studio-test-artifacts/chrome-relay-profile/
 external-sources/

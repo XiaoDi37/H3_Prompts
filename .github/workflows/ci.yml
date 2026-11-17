@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: JS syntax check
+        run: node --check studio.js
+      - name: Build single-file page
+        run: python -B build_studio.py
+      - name: Unit tests (build + relay service)
+        run: python -B -m unittest test_studio_build test_studio_server -q
+      - name: Offline package build + CRC
+        run: python -B build_offline.py
+
+  browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Start static server and headless Chrome
+        run: |
+          nohup python -m http.server 8786 --bind 127.0.0.1 >/dev/null 2>&1 &
+          nohup google-chrome --headless=new --disable-gpu --no-sandbox --no-first-run --no-default-browser-check --remote-debugging-port=9335 --remote-debugging-address=127.0.0.1 --user-data-dir=studio-test-artifacts/chrome-profile about:blank >/dev/null 2>&1 &
+          sleep 3
+          curl -sf http://127.0.0.1:9335/json/version >/dev/null
+      - name: Browser end-to-end (48 tests)
+        run: node test_studio_browser.cjs
+      - name: Relay end-to-end (6 tests)
+        run: node test_studio_relay_browser.cjs
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots
+          path: |
+            studio-test-artifacts/*.png
+            studio-test-artifacts/results.json
+            studio-test-artifacts/relay-results.json
