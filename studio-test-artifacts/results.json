@@ -1,5 +1,5 @@
 {
-  "passed": 59,
+  "passed": 69,
   "tests": [
     "773 records, local thumbnails, bilingual titles and clean filters",
     "Real search input, literal special characters and no-result reset",
@@ -59,6 +59,16 @@
     "Lint bench keeps live controls, library badges and small-screen layout",
     "Guided tour spotlights key areas, steps, finishes and reopens",
     "Guided tour auto-opens once, persists and fits mobile",
+    "Take review records scores, best mark, comparison and undo",
+    "Version lineage branches and old flat saves migrate to a tree",
+    "Best-take badge and mybest sort surface reviewed shots",
+    "Moodboard wall indexes elements and every control filters live",
+    "Moodboard bulk selection and drag both land on the sequence board",
+    "Board lint flags jumps, gaps, budget and duplicates with jump-to-row",
+    "Recipe workshop previews lint-clean chains and creates a draft",
+    "Recipe card exports PNG and Markdown with lint and take data",
+    "Gateway probe card stays read-only and never fires paid calls",
+    "Keyboard selection flow moves focus and acts without stealing input",
     "File-mode standalone works without fetch or dependencies"
   ],
   "consoleErrors": []
