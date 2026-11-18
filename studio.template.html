@@ -130,9 +130,11 @@
 <div id="guideOverlay" class="guide-overlay" hidden>
   <div class="guide-spot" id="guideSpot" aria-hidden="true"></div>
   <div class="guide-card" id="guideCard" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideBody">
-    <div class="guide-card-head"><span class="guide-eyebrow"><span data-icon="compass"></span><span data-t="guideEyebrow">新手引导</span></span><button class="icon-button guide-close" id="guideClose" data-title="close" data-icon="close"></button></div>
+    <div class="guide-card-head"><span class="guide-eyebrow"><span data-icon="compass"></span><span data-t="guideEyebrow" id="guideChapter">新手引导</span></span><button class="icon-button guide-close" id="guideClose" data-title="close" data-icon="close"></button></div>
     <h2 id="guideTitle"></h2>
     <p id="guideBody"></p>
+    <ul class="guide-points" id="guidePoints" hidden></ul>
+    <p class="guide-tip" id="guideTip" hidden></p>
     <div class="guide-progress" id="guideProgress" aria-hidden="true"></div>
     <div class="guide-actions"><button class="button ghost" id="guideSkip" data-t="guideSkip">跳过</button><span class="guide-step-count" id="guideCount"></span><span class="guide-nav"><button class="button" id="guidePrev" data-t="guidePrev">上一步</button><button class="button primary" id="guideNext">下一步</button></span></div>
   </div>
