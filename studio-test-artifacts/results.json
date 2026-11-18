@@ -1,5 +1,5 @@
 {
-  "passed": 57,
+  "passed": 59,
   "tests": [
     "773 records, local thumbnails, bilingual titles and clean filters",
     "Real search input, literal special characters and no-result reset",
@@ -55,6 +55,8 @@
     "Curated default shows quality picks and full library stays reachable",
     "Filter popover folds controls, counts active filters and closes cleanly",
     "Manhua and short-drama batch plus drama skills stay reachable and attributed",
+    "Prompt lint engine flags grammar and model-range issues and repairs them",
+    "Lint bench keeps live controls, library badges and small-screen layout",
     "Guided tour spotlights key areas, steps, finishes and reopens",
     "Guided tour auto-opens once, persists and fits mobile",
     "File-mode standalone works without fetch or dependencies"

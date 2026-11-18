@@ -7,6 +7,8 @@
 | 提示词实验室 | 移动端 |
 | --- | --- |
 | ![提示词实验室](studio-test-artifacts/desktop-prompt-lab.png) | ![移动端](studio-test-artifacts/mobile-library.png) |
+| 提示词体检台 | 移动端体检台 |
+| ![提示词体检台](studio-test-artifacts/desktop-lint.png) | ![移动端体检台](studio-test-artifacts/mobile-lint.png) |
 
 ## 功能
 
@@ -15,6 +17,7 @@
 - **收藏与标签**：按收藏夹分组、自定义标签，支持 JSON 备份导出 / 导入
 - **中英双语界面**，深色 / 浅色主题一键切换
 - **提示词实验室**：草稿编辑、版本历史（含版本对照 diff）、创作笔记；提示词解剖、智能补全、一键增强
+- **提示词体检台**：创作台第四个页签，8 条模型感知规则（时长/画幅实证区间、链镜时间戳语法、镜号连续、镜头节奏、@素材编号对位、信息密度、空白整洁），严重/警告/提示三级；镜号重排、时间戳重建、空白清理三种一键修复，规则开关与显示阈值实时生效，可导出 JSON 体检报告；灵感卡片带体检徽章，只建议不拦截生成
 - **分镜序列板**：把草稿与灵感分镜按拍摄顺序排列，逐镜写连续性备注，一键导出 CSV / JSON / Markdown 制片表，或直接打印成白底黑字的纸质制片表
 - **智能体助手**：接入你自己的 LLM 与文生图 API，基于所选分镜或整块序列板优化提示词、生成关键帧图片；序列板整场送入上下文后逐镜改写，每块结果回写到对应草稿，服装、道具、光线与轴线保持前后镜一致
 - **导演技能库**：内置 5 套署名开源导演技能（H3 导演方法、H3 语法与硬限制、Seedance 2.5 导演方法、短剧分镜与连戏、漫剧角色锁定导演），注入系统提示词约束改写与关键图拆解，可一键「用技能改写」
@@ -86,7 +89,7 @@ node --check studio.js     # 语法检查（可选）
 # 单元测试（28 项）：构建产物完整性 + 本机服务行为
 python -B -m unittest test_studio_build test_studio_server -q
 
-# 浏览器端到端（57 项）：需先启动静态服务与无头 Chrome
+# 浏览器端到端（59 项）：需先启动静态服务与无头 Chrome
 python -m http.server 8786 --bind 127.0.0.1
 # 另开终端：Chrome --headless=new --remote-debugging-port=9335 --user-data-dir=studio-test-artifacts/chrome-profile about:blank
 node test_studio_browser.cjs
