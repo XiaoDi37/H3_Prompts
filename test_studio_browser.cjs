@@ -49,9 +49,9 @@ async function run(){
   await waitUntil("[...document.querySelectorAll('.card-media img')].slice(0,2).every(i=>i.complete&&i.naturalWidth>0)");
   await waitUntil("document.querySelector('#featuredImage').complete&&document.querySelector('#featuredImage').naturalWidth>0");
   const FIRST_ID=await evaluate('CURATED_IDS[0]');
-  await test('758 records, local thumbnails, bilingual titles and clean filters',async()=>{
+  await test('773 records, local thumbnails, bilingual titles and clean filters',async()=>{
     const data=await evaluate(`({total:CATALOG.length,cards:document.querySelectorAll('.prompt-card').length,categories:categories.length,firstId:document.querySelector('.prompt-card').dataset.itemId,secondId:document.querySelectorAll('.prompt-card')[1].dataset.itemId,curated0:CURATED_IDS[0],curated1:CURATED_IDS[1],curatedCount:CURATED_IDS.length,featuredHidden:document.querySelector('#featuredScene').hidden,hero:document.querySelector('#featuredTitle').textContent,featuredName:document.querySelector('#featuredName').textContent,durations:[...document.querySelector('#durationFilter').options].slice(1).map(o=>Number(o.value)),aspect:CATALOG.find(d=>d.aspect==='7:4')?.aspect,group:CATALOG.find(d=>d.aspect==='7:4')?.aspect_group,theme:document.documentElement.dataset.theme})`);
-    assert.equal(data.total,758);assert.equal(data.cards,24);assert.equal(data.categories,26);assert.equal(data.firstId,data.curated0);assert.equal(data.secondId,data.curated1);assert.ok(data.curatedCount>=96&&data.curatedCount<=120);assert.equal(data.featuredHidden,false);assert.match(data.hero,/下一帧/);assert.ok(data.featuredName.length>0);assert.equal(data.theme,'dark');assert.deepEqual(data.durations,[...data.durations].sort((a,b)=>a-b));assert.equal(data.aspect,'7:4');assert.equal(data.group,'16:9');
+    assert.equal(data.total,773);assert.equal(data.cards,24);assert.equal(data.categories,28);assert.equal(data.firstId,data.curated0);assert.equal(data.secondId,data.curated1);assert.ok(data.curatedCount>=96&&data.curatedCount<=120);assert.equal(data.featuredHidden,false);assert.match(data.hero,/下一帧/);assert.ok(data.featuredName.length>0);assert.equal(data.theme,'dark');assert.deepEqual(data.durations,[...data.durations].sort((a,b)=>a-b));assert.equal(data.aspect,'7:4');assert.equal(data.group,'16:9');
   });
   await screenshot('desktop-library');
   await test('Real search input, literal special characters and no-result reset',async()=>{
@@ -67,7 +67,7 @@ async function run(){
     await click('#loadMore');assert.equal(await evaluate("document.querySelectorAll('.prompt-card').length"),48);
   });
   await test('Model filter isolates each generation model and resets cleanly',async()=>{
-    assert.equal(await evaluate("document.querySelector('#modelFilter').options.length"),4);
+    assert.equal(await evaluate("document.querySelector('#modelFilter').options.length"),5);
     await select('#modelFilter','Veo 3');
     assert.equal(await evaluate("filteredItems().length"),30);
     assert.equal(await evaluate("filteredItems().every(d=>d.model==='Veo 3')"),true);
@@ -75,10 +75,13 @@ async function run(){
     await select('#modelFilter','Seedance 2.5');
     assert.equal(await evaluate("filteredItems().length"),24);
     assert.equal(await evaluate("filteredItems().every(d=>d.model==='Seedance 2.5')"),true);
+    await select('#modelFilter','Seedance 2.0');
+    assert.equal(await evaluate("filteredItems().length"),4);
+    assert.equal(await evaluate("filteredItems().every(d=>d.model==='Seedance 2.0')"),true);
     await select('#modelFilter','MiniMax H3');
-    assert.equal(await evaluate("filteredItems().length"),704);
+    assert.equal(await evaluate("filteredItems().length"),715);
     await click('#resetFilters');
-    assert.equal(await evaluate("filteredItems().length"),758);
+    assert.equal(await evaluate("filteredItems().length"),773);
     assert.equal(await evaluate("document.querySelector('#modelFilter').value"),'');
     assert.equal(await evaluate("document.querySelector('#featuredScene').hidden"),false);
   });
@@ -244,7 +247,7 @@ async function run(){
     await click('#editorClose');await click('#agentLauncher');
   });
   await test('Director skill picker injects method into the system prompt and persists',async()=>{
-    assert.equal(await evaluate("document.querySelector('#skillSelect').options.length"),4);
+    assert.equal(await evaluate("document.querySelector('#skillSelect').options.length"),6);
     assert.equal(await evaluate("document.querySelector('#skillApply').hidden"),true);
     await select('#skillSelect','h3-grammar');
     assert.equal(await evaluate("state.settings.skill"),'h3-grammar');
@@ -265,13 +268,13 @@ async function run(){
     await select('#skillSelect','');
   });
   await test('NEW badges, palette skill commands and skill-tagged asset groups',async()=>{
-    assert.equal(await evaluate("CATALOG.filter(d=>['xm-','fq-','sd-','veo-'].some(p=>d.id.startsWith(p))).length"),208);
+    assert.equal(await evaluate("CATALOG.filter(d=>['xm-','fq-','sd-','veo-','zs-','zl-'].some(p=>d.id.startsWith(p))).length"),223);
     await select('#modelFilter','Veo 3');
     assert.equal(await evaluate("document.querySelectorAll('.prompt-card .new-badge').length"),24);
     await click('#resetFilters');
     assert.equal(await evaluate("document.querySelectorAll('.prompt-card .new-badge').length"),await evaluate("CURATED_IDS.slice(0,24).filter(id=>IMPORTED_PREFIXES.some(p=>id.startsWith(p))).length"));
     await evaluate('openPalette()');await fill('#paletteInput','技能');
-    assert.equal(await evaluate('paletteItems.length'),4);
+    assert.equal(await evaluate('paletteItems.length'),6);
     await evaluate("runPalette(paletteItems.findIndex(it=>it.label.includes('H3 导演方法')))");
     assert.equal(await evaluate("state.settings.skill"),'h3-director');
     assert.equal(await evaluate("document.body.classList.contains('agent-visible')"),true);
@@ -854,12 +857,12 @@ async function run(){
   await test('Curated default shows quality picks and full library stays reachable',async()=>{
     await dimensions(1440,960);await evaluate("setView('library')");
     const base=await evaluate("({n:CURATED_IDS.length,shown:filteredItems().length,count:document.querySelector('#resultCount').textContent,note:document.querySelector('#resultNote').textContent,toggle:document.querySelector('#curatedToggle').textContent,models:[...new Set([...document.querySelectorAll('.prompt-card')].map(c=>ITEMS.get(c.dataset.itemId).model))],minLen:Math.min(...[...document.querySelectorAll('.prompt-card')].map(c=>ITEMS.get(c.dataset.itemId).prompt.length))})");
-    assert.equal(base.shown,758);assert.equal(base.count,base.n+' 条精选灵感');assert.match(base.note,/评分精选/);assert.equal(base.toggle,'查看全库');
+    assert.equal(base.shown,773);assert.equal(base.count,base.n+' 条精选灵感');assert.match(base.note,/评分精选/);assert.equal(base.toggle,'查看全库');
     assert.equal(base.models.length,3);assert.ok(base.minLen>=200,JSON.stringify(base));
     assert.deepEqual(await evaluate("[...document.querySelectorAll('.prompt-card')].map(c=>c.dataset.itemId)"),await evaluate("CURATED_IDS.slice(0,24)"));
     await click('#curatedToggle');await waitUntil("ui.sort==='all'");
     const all=await evaluate("({count:document.querySelector('#resultCount').textContent,first:document.querySelector('.prompt-card').dataset.itemId,hero:document.querySelector('#featuredScene').hidden,toggle:document.querySelector('#curatedToggle').textContent})");
-    assert.equal(all.count,'758 条灵感');assert.equal(all.first,await evaluate('CATALOG[0].id'));assert.equal(all.hero,true);assert.equal(all.toggle,'回到精选');
+    assert.equal(all.count,'773 条灵感');assert.equal(all.first,await evaluate('CATALOG[0].id'));assert.equal(all.hero,true);assert.equal(all.toggle,'回到精选');
     await click('#loadMore');assert.equal(await evaluate("document.querySelectorAll('.prompt-card').length"),48);
     await click('#curatedToggle');await waitUntil("ui.sort==='source'");
     assert.equal(await evaluate("document.querySelectorAll('.prompt-card').length"),24);
@@ -889,13 +892,35 @@ async function run(){
     await waitUntil("document.querySelector('#filterPopover').hidden");
     await click('#resetFilters');
     assert.equal(await evaluate("document.querySelector('#filterCount').hidden"),true);
-    assert.equal(await evaluate("filteredItems().length"),758);
+    assert.equal(await evaluate("filteredItems().length"),773);
     await dimensions(390,844);await click('#filterToggle');await waitUntil("!document.querySelector('#filterPopover').hidden");
     const m=await evaluate("(()=>{const p=document.querySelector('#filterPopover').getBoundingClientRect();return{left:Math.round(p.left),right:Math.round(p.right),vw:window.innerWidth}})()");
     assert.ok(m.left>=0&&m.right<=m.vw+1,JSON.stringify(m));
     await screenshot('mobile-filter-popover');
     await evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
     await dimensions(1440,960);await evaluate("setView('library')");
+  });
+  await test('Manhua and short-drama batch plus drama skills stay reachable and attributed',async()=>{
+    await evaluate("setView('library')");
+    assert.ok(await evaluate("categories.includes('manhua drama')&&categories.includes('short drama')"));
+    await evaluate("ui.category='manhua drama';renderFilters();renderLibrary()");
+    const manhua=await evaluate("({n:filteredItems().length,models:[...new Set(filteredItems().map(d=>d.model))].sort(),chains:filteredItems().filter(d=>d.id.startsWith('zs-')).length,valid:filteredItems().filter(d=>d.id.startsWith('zs-')).every(d=>d.duration_seconds>=4&&d.duration_seconds<=15&&d.prompt.includes('[Shot 1]'))})");
+    assert.equal(manhua.n,12);assert.equal(manhua.chains,11);assert.equal(manhua.valid,true);
+    assert.deepEqual(manhua.models,['MiniMax H3','Seedance 2.0']);
+    await screenshot('desktop-drama-category');
+    await dimensions(390,844);await screenshot('mobile-drama-category');await dimensions(1440,960);
+    await evaluate("ui.category='short drama';renderFilters();renderLibrary()");
+    assert.equal(await evaluate("filteredItems().length"),3);
+    assert.equal(await evaluate("filteredItems().every(d=>d.model==='Seedance 2.0')"),true);
+    assert.ok(await evaluate("document.querySelector('.prompt-card .card-author').textContent.length>0"));
+    await evaluate("ui.category='';renderFilters();renderLibrary()");
+    await select('#skillSelect','drama-storyboard');
+    assert.equal(await evaluate("sysPrompt('improve').includes('continuity')"),true);
+    assert.equal(await evaluate("document.querySelector('#skillSource').href"),'https://github.com/zenstory-ai/drama-skills');
+    await select('#skillSelect','manhua-lock');
+    assert.equal(await evaluate("sysPrompt('improve').includes('@Image N')"),true);
+    assert.equal(await evaluate("document.querySelector('#skillSource').href"),'https://github.com/liyue-aigc/seedance-2-5-video-director');
+    await select('#skillSelect','');
   });
   await test('Guided tour spotlights key areas, steps, finishes and reopens',async()=>{
     await dimensions(1440,960);
@@ -961,7 +986,7 @@ async function run(){
     await evaluate("state.settings.guideSeen=true;saveState();setView('library')");
   });
   await test('File-mode standalone works without fetch or dependencies',async()=>{
-    await dimensions(1440,960);await send('Page.navigate',{url:'file:///'+ROOT.replaceAll('\\','/')+'/video-prompt-studio.html'});await waitUntil("location.protocol==='file:'&&document.querySelectorAll('.prompt-card').length===24");await evaluate("state.settings.guideSeen=true;saveState()");await waitUntil("document.querySelector('.card-media img').naturalWidth>0");assert.equal(await evaluate('CATALOG.length'),758);
+    await dimensions(1440,960);await send('Page.navigate',{url:'file:///'+ROOT.replaceAll('\\','/')+'/video-prompt-studio.html'});await waitUntil("location.protocol==='file:'&&document.querySelectorAll('.prompt-card').length===24");await evaluate("state.settings.guideSeen=true;saveState()");await waitUntil("document.querySelector('.card-media img').naturalWidth>0");assert.equal(await evaluate('CATALOG.length'),773);
   });
   assert.equal(browserErrors.length,0,JSON.stringify(browserErrors));
   await fs.writeFile(path.join(ARTIFACTS,'results.json'),JSON.stringify({passed:results.length,tests:results,consoleErrors:browserErrors},null,2));

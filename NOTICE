@@ -32,6 +32,28 @@ every imported example remains attributable to its origin.
    https://github.com/liu-kaining/Awesome-Veo3-Prompts
    MIT License — Copyright (c) 2025 liu-kaining
 
+6. zenstory-ai/drama-skills (11 merged shot chains, slug prefix "zs-")
+   https://github.com/zenstory-ai/drama-skills
+   MIT License — Copyright (c) 2026 drama-skills contributors
+   Source: examples/creator-first/EP001/视频提示词.md (synthetic sample,
+   realistic-style manhua drama, 9:16). The sample is model-agnostic; this
+   product targets MiniMax H3, so beats shorter than the H3 4 s floor were
+   merged with neighbouring beats into [Shot N] multi-shot prompts whose
+   timestamps accumulate the source beat durations (the merge rule is the
+   source README's own guidance). Prompt text is verbatim inside each segment.
+
+7. ZeroLu/awesome-seedance (4 examples, slug prefix "zl-")
+   https://github.com/ZeroLu/awesome-seedance
+   MIT License — Copyright (c) 2026 ZeroLu
+   Source: README-zh.md sections 6.1-6.3 (short drama) and 7.1 (manhua drama).
+   These prompts target Seedance 2.0 and are labelled as such in the model
+   filter. Where the source omits duration or aspect, curatorial defaults
+   (10 s / 16:9 or 9:16) were applied. Original author posts (X / WeChat) are
+   kept in each row's `url` field; `source_link` points at the repo section.
+
+Rows without an image poster published by their source receive a generated
+SVG slate thumbnail (title, category, source badge) instead of a fake still.
+
 Thumbnail images in thumbs/ are local copies or placeholders derived from the
 preview media published by the sources above, under the same terms.
 
@@ -55,6 +77,17 @@ entry carries its source attribution in the agent panel.
    The skill texts are adaptations of that CC BY 4.0 content: credit is given
    here and in the UI, a link to the source is provided, and changes were made
    (condensed and reworded for this product). No endorsement is implied.
+
+3. zenstory-ai/drama-skills — "短剧分镜与连戏 / Short-Drama Storyboard & Continuity"
+   https://github.com/zenstory-ai/drama-skills
+   MIT License — Copyright (c) 2026 drama-skills contributors
+   Adapted from skills/short-drama-storyboard and short-drama-video-prompts.
+
+4. liyue-aigc/seedance-2-5-video-director — "漫剧角色锁定导演 / Manhua Character-Lock Director"
+   https://github.com/liyue-aigc/seedance-2-5-video-director
+   MIT License — Copyright (c) 2026 liyue-aigc
+   Adapted from SKILL.md (mode selection, asset lock table, continuity and
+   timing rules).
 
 MIT License text (applies to the MIT-licensed sources above)
 ------------------------------------------------------------

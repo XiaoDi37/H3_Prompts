@@ -1,7 +1,7 @@
 {
-  "passed": 56,
+  "passed": 57,
   "tests": [
-    "758 records, local thumbnails, bilingual titles and clean filters",
+    "773 records, local thumbnails, bilingual titles and clean filters",
     "Real search input, literal special characters and no-result reset",
     "Duration and approximate aspect intersection matches actual catalog",
     "Model filter isolates each generation model and resets cleanly",
@@ -54,6 +54,7 @@
     "Print stylesheet renders a full production sheet",
     "Curated default shows quality picks and full library stays reachable",
     "Filter popover folds controls, counts active filters and closes cleanly",
+    "Manhua and short-drama batch plus drama skills stay reachable and attributed",
     "Guided tour spotlights key areas, steps, finishes and reopens",
     "Guided tour auto-opens once, persists and fits mobile",
     "File-mode standalone works without fetch or dependencies"

@@ -169,7 +169,124 @@ VEO_EN = {
     "winter_forest_spinning_joy": "Winter Forest Spinning Joy",
 }
 
-BADGES = {"MiniMax H3": "H3", "Seedance 2.5": "SD 2.5", "Veo 3": "VEO 3"}
+BADGES = {"MiniMax H3": "H3", "Seedance 2.5": "SD 2.5", "Veo 3": "VEO 3",
+          "Seedance 2.0": "SD 2.0"}
+ZEN_REPO = "https://github.com/zenstory-ai/drama-skills"
+ZEROLU_REPO = "https://github.com/ZeroLu/awesome-seedance"
+ZEN_FILE = "examples/creator-first/EP001/视频提示词.md"
+
+
+def github_anchor(heading):
+    slug = re.sub(r"[^\w\- ]", "", heading, flags=re.UNICODE).strip().lower()
+    return slug.replace(" ", "-")
+
+
+def parse_zenstory():
+    """Merge sub-minimum beats into H3 multi-shot chains, per the source README.
+
+    The sample is model-agnostic; shots shorter than the H3 4 s floor are merged
+    with neighbours into [Shot N] segments whose timestamps accumulate the source
+    beat durations. Prompt text stays verbatim inside each segment.
+    """
+    text = (SOURCES / "zenstory-drama" / ZEN_FILE).read_text(encoding="utf-8")
+    shots = []
+    for match in re.finditer(r"^## (MOTION-EP001-\d+) · (.+)$", text, re.M):
+        body = text[match.end():]
+        nxt = re.search(r"^## ", body, re.M)
+        body = body[:nxt.start()] if nxt else body
+        dur = re.search(r"^- 时长：(\d+)s", body, re.M)
+        block = re.search(r"### 可复制提示词\s*\n((?:>.*\n?)+)", body)
+        if not dur or not block:
+            raise ValueError(f"Zenstory shot lacks duration or prompt: {match.group(1)}")
+        lines = [line[1:].strip() for line in block.group(1).splitlines()
+                 if line.startswith(">")]
+        shots.append({
+            "no": int(match.group(1).rsplit("-", 1)[1]),
+            "title": match.group(2).strip(),
+            "seconds": int(dur.group(1)),
+            "prompt": " ".join(lines),
+            "anchor": github_anchor(match.group(0)[3:]),
+        })
+    groups, current = [], []
+    for shot in shots:
+        if current and sum(s["seconds"] for s in current) + shot["seconds"] > 15:
+            groups.append(current)
+            current = []
+        current.append(shot)
+        if sum(s["seconds"] for s in current) >= 4:
+            groups.append(current)
+            current = []
+    if current:
+        if groups and sum(s["seconds"] for s in groups[-1] + current) <= 15:
+            groups[-1].extend(current)
+        else:
+            groups.append(current)
+    rows = []
+    for group in groups:
+        total = sum(s["seconds"] for s in group)
+        if total < 4 or total > 15:
+            raise ValueError(f"Merged zenstory chain outside H3 4-15 s: {total}")
+        parts, clock = [], 0
+        for index, shot in enumerate(group):
+            stamp = "" if index == 0 else f" At {clock // 60:02d}:{clock % 60:02d}.000"
+            parts.append(f"[Shot {index + 1}]{stamp} {shot['prompt']}")
+            clock += shot["seconds"]
+        first, last = group[0]["no"], group[-1]["no"]
+        title = (f"EP001 链镜 {first:03d}-{last:03d} · {group[0]['title']}"
+                 if len(group) > 1 else f"EP001 镜 {first:03d} · {group[0]['title']}")
+        link = f"{ZEN_REPO}/blob/main/{ZEN_FILE}#{group[0]['anchor']}"
+        rows.append({
+            "slug": f"zs-{first:03d}-{last:03d}", "title": title, "title_zh": title,
+            "prompt": "\n".join(parts), "model": "MiniMax H3",
+            "duration": f"{total}s", "aspect": "9:16", "category": "manhua drama",
+            "author": "zenstory-ai/drama-skills · MIT 合成样例",
+            "source_link": link, "url": f"{ZEN_REPO}/blob/main/{ZEN_FILE}",
+            "video": "", "poster": "", "source_label": "ZENSTORY · MIT",
+            "preview_file": None,
+        })
+    return rows
+
+
+def parse_zerolu():
+    """Short-drama / manhua cases from the MIT ZeroLu collection (Seedance 2.0)."""
+    text = (SOURCES / "zerolu-seedance" / "README-zh.md").read_text(encoding="utf-8")
+    specs = [
+        ("6.1", "short drama", 10, "16:9"),
+        ("6.2", "short drama", 15, "9:16"),
+        ("6.3", "short drama", 15, "9:16"),
+        ("7.1", "manhua drama", 10, "16:9"),
+    ]
+    rows = []
+    for num, category, default_seconds, default_aspect in specs:
+        head = re.search(r"^### " + re.escape(num) + r"\. (.+)$", text, re.M)
+        if not head:
+            raise ValueError(f"ZeroLu section missing: {num}")
+        body = text[head.end():]
+        nxt = re.search(r"^### ", body, re.M)
+        body = body[:nxt.start()] if nxt else body
+        block = re.search(r"```(?:text)?\s*\n(.*?)```", body, re.S)
+        if not block:
+            raise ValueError(f"ZeroLu prompt block missing: {num}")
+        prompt = block.group(1).strip()
+        seconds = re.search(r"【时长】\s*(\d+)\s*秒", prompt) or \
+            re.search(r"^(\d+)\s*秒", prompt)
+        source = re.search(r"\*来源：(.+?)\*", body)
+        author = re.split(r"\s*[-(]\s*", source.group(1))[0].strip() if source else "ZeroLu"
+        posts = re.findall(r"\((https?://[^)]+)\)", source.group(1)) if source else []
+        anchor = github_anchor(head.group(0)[4:])
+        rows.append({
+            "slug": "zl-" + num.replace(".", "-"),
+            "title": head.group(1).strip(), "title_zh": head.group(1).strip(),
+            "prompt": prompt, "model": "Seedance 2.0",
+            "duration": f"{int(seconds.group(1)) if seconds else default_seconds}s",
+            "aspect": find_aspect(prompt) or default_aspect,
+            "category": category, "author": author,
+            "source_link": f"{ZEROLU_REPO}/blob/main/README-zh.md#{anchor}",
+            "url": posts[-1] if posts else "",
+            "video": "", "poster": "", "source_label": "ZEROLU · MIT",
+            "preview_file": None,
+        })
+    return rows
 
 
 def find_aspect(text):
@@ -483,7 +600,8 @@ def main():
     seen_prompts = {norm_text(row["prompt"]) for row in rows}
     seen_slugs = {row["slug"] for row in rows}
 
-    candidates = parse_xianyu110() + parse_flaqai() + parse_kinovi() + parse_veo()
+    candidates = parse_xianyu110() + parse_flaqai() + parse_kinovi() + parse_veo() \
+        + parse_zenstory() + parse_zerolu()
     stats = {"copied": 0, "downloaded": 0, "placeholder": 0}
     added, skipped = [], {"duplicate": 0, "already": 0}
     for row in candidates:
@@ -522,7 +640,8 @@ def main():
     dump_json(BASE / "titles_zh.json", translations + new_translations)
     dump_json(BASE / "thumbs_ext.json", thumbs_ext)
 
-    prefixes = {"xm-": "xianyu110", "fq-": "flaqai", "sd-": "kinovi", "veo-": "veo3"}
+    prefixes = {"xm-": "xianyu110", "fq-": "flaqai", "sd-": "kinovi", "veo-": "veo3",
+                "zs-": "zenstory", "zl-": "zerolu"}
     counts = {name: sum(1 for r in added if r["slug"].startswith(p)) for p, name in prefixes.items()}
     print(f"Imported {len(added)} rows: " + " ".join(f"{k}={v}" for k, v in counts.items()))
     print(f"Skipped: {skipped['duplicate']} duplicates, {skipped['already']} already imported")

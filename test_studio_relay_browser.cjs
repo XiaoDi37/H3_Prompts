@@ -95,7 +95,7 @@ async function run() {
 
   await test('Local service hosts the page and enables the same-origin relay', async () => {
     assert.equal(await evaluate('RELAY'), '/relay');
-    assert.equal(await evaluate('CATALOG.length'), 758);
+    assert.equal(await evaluate('CATALOG.length'), 773);
     await waitUntil("document.querySelector('.card-media img').naturalWidth>0");
     await click('#agentLauncher'); await click('#agentSettingsOpen');
     assert.match(await evaluate("document.querySelector('#agentConfigHint').textContent"), /本机服务托管/);
